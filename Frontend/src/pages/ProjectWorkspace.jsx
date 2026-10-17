@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { PROJECTS, LINEAGE_EDGE_IDS } from '../data/projects';
+import { useState, useEffect } from 'react';
+import { fetchProject } from '../lib/api';
 import InviteResearcher from './InviteResearcher';
 import './ProjectWorkspace.css';
 
@@ -24,9 +24,10 @@ const STATUS_COLORS = {
 };
 
 function Avatar({ c, size = 32 }) {
+  if (!c) return null;
   return (
     <div
-      title={`${c.name} · ${c.role}`}
+      title={`${c.name} · ${c.role || 'Contributor'}`}
       className="proj-ws-avatar-item"
       style={{
         width: size,
@@ -37,11 +38,11 @@ function Avatar({ c, size = 32 }) {
         justifyContent: 'center',
         color: '#ffffff',
         fontWeight: 600,
-        backgroundColor: c.avatarColor,
+        backgroundColor: c.avatarColor || '#0F9D8A',
         fontSize: size * 0.34,
       }}
     >
-      {c.initials}
+      {c.initials || c.name?.slice(0, 2).toUpperCase() || 'U'}
     </div>
   );
 }
@@ -61,15 +62,18 @@ const NODE_COLORS = {
   result:         { bg: '#DCFCE7', border: '#16A34A', text: '#16A34A' },
 };
 
-function CollabLineage({ projectId, contributors }) {
-  const p = PROJECTS.find(x => x.id === projectId);
-  if (!p) return null;
-  const nodes = p.lineageNodes || [];
-  const edgePairs = LINEAGE_EDGE_IDS[projectId] || [];
-  const contribMap = Object.fromEntries(contributors.map(c => [c.id, c]));
+function CollabLineage({ nodes = [], edgePairs = [], contributors = [] }) {
+  if (!nodes || nodes.length === 0) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', color: '#94A3B8', fontSize: '14px' }}>
+        No lineage graph elements recorded for this project yet.
+      </div>
+    );
+  }
 
+  const contribMap = Object.fromEntries(contributors.map(c => [c.id, c]));
   const NW = 160, NH = 50, SVG_W = 600;
-  const maxY = nodes.length > 0 ? Math.max(...nodes.map(n => n.y)) : 400;
+  const maxY = nodes.length > 0 ? Math.max(...nodes.map(n => n.y || 100)) : 400;
   const SVG_H = maxY + 100;
 
   return (
@@ -85,8 +89,8 @@ function CollabLineage({ projectId, contributors }) {
         const s = nodes.find(n => n.id === sId);
         const t = nodes.find(n => n.id === tId);
         if (!s || !t) return null;
-        const x1 = SVG_W / 2, y1 = s.y + NH / 2;
-        const x2 = SVG_W / 2, y2 = t.y - NH / 2;
+        const x1 = SVG_W / 2, y1 = (s.y || 50) + NH / 2;
+        const x2 = SVG_W / 2, y2 = (t.y || 150) - NH / 2;
         const cy = (y1 + y2) / 2;
         return (
           <path
@@ -107,27 +111,27 @@ function CollabLineage({ projectId, contributors }) {
         const contributor = contribMap[n.contributorId];
         const statusCfg = STATUS_COLORS[n.status] || STATUS_COLORS.active;
         return (
-          <g key={n.id} transform={`translate(${cx},${n.y - NH / 2})`}>
+          <g key={n.id} transform={`translate(${cx},${(n.y || 50) - NH / 2})`}>
             <rect
               width={NW} height={NH} rx={8}
               fill={cfg.bg} stroke={cfg.border} strokeWidth="1.5"
             />
             {/* Type label */}
             <text x={10} y={16} fontSize={9} fill={cfg.text} fontWeight="600" fontFamily="Inter, sans-serif">
-              {n.type.toUpperCase()}
+              {(n.type || 'dataset').toUpperCase()}
             </text>
             {/* Main label */}
             <text x={10} y={30} fontSize={12} fill="#0B1220" fontWeight="600" fontFamily="Inter, sans-serif">
-              {n.label.length > 18 ? n.label.slice(0, 17) + '…' : n.label}
+              {(n.label || n.name || '').length > 18 ? (n.label || n.name).slice(0, 17) + '…' : (n.label || n.name || '')}
             </text>
             {/* Status dot */}
             <circle cx={NW - 12} cy={NH / 2} r={4} fill={statusCfg?.dot || '#94A3B8'} />
             {/* Contributor avatar */}
             {contributor && (
               <g transform={`translate(${NW + 8},${NH / 2 - 12})`}>
-                <circle cx={12} cy={12} r={12} fill={contributor.avatarColor} />
+                <circle cx={12} cy={12} r={12} fill={contributor.avatarColor || '#0F9D8A'} />
                 <text x={12} y={16} textAnchor="middle" fontSize={8} fill="white" fontWeight="700" fontFamily="Inter, sans-serif">
-                  {contributor.initials}
+                  {contributor.initials || 'U'}
                 </text>
               </g>
             )}
@@ -142,9 +146,65 @@ export default function ProjectWorkspace({ projectId, onBack }) {
   const [tab, setTab] = useState('overview');
   const [showInvite, setShowInvite] = useState(false);
   const [docOpen, setDocOpen] = useState(null);
+  const [rawProject, setRawProject] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const p = PROJECTS.find(x => x.id === projectId);
-  if (!p) return <div className="proj-ws-container" style={{ color: '#EF4444' }}>Project not found</div>;
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await fetchProject(projectId);
+        setRawProject(data);
+      } catch (err) {
+        console.error('Failed to load project', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (projectId) load();
+  }, [projectId]);
+
+  if (loading) {
+    return (
+      <div className="proj-ws-container" style={{ padding: '60px 0', textAlign: 'center', color: '#6B7C93' }}>
+        Loading project workspace…
+      </div>
+    );
+  }
+
+  if (!rawProject) {
+    return (
+      <div className="proj-ws-container" style={{ padding: '40px 0' }}>
+        <button onClick={onBack} className="proj-ws-breadcrumb">
+          ← Back to Projects
+        </button>
+        <div style={{ color: '#EF4444', marginTop: '20px' }}>Project not found or failed to load.</div>
+      </div>
+    );
+  }
+
+  const p = {
+    id: rawProject.id,
+    projectId: rawProject.id?.slice(0, 8)?.toUpperCase() || 'PRJ',
+    name: rawProject.name || 'Untitled Project',
+    description: rawProject.description || '',
+    visibility: rawProject.visibility || 'team',
+    status: rawProject.status || 'active',
+    tags: Array.isArray(rawProject.tags) ? rawProject.tags : [],
+    admin: rawProject.admin || 'Project Owner',
+    createdAt: rawProject.created_at ? new Date(rawProject.created_at).toLocaleDateString() : 'Recently',
+    lastActivity: rawProject.updated_at ? new Date(rawProject.updated_at).toLocaleDateString() : 'Just now',
+    contributors: rawProject.contributors || [
+      { id: 'owner', name: 'Project Owner', role: 'Project Admin', initials: 'PO', avatarColor: '#0F9D8A', contributions: 1 }
+    ],
+    datasets: rawProject.datasets || [],
+    experiments: rawProject.experiments || [],
+    pipelines: rawProject.pipelines || [],
+    documents: rawProject.documents || [],
+    activity: rawProject.activity || [],
+    lineageNodes: rawProject.lineageNodes || [],
+    lineageEdges: rawProject.lineageEdges || [],
+  };
 
   const openDoc = p.documents?.find(d => d.id === docOpen);
 
@@ -478,7 +538,7 @@ export default function ProjectWorkspace({ projectId, onBack }) {
             </div>
           </div>
           <div className="proj-ws-collab-svg-wrap">
-            <CollabLineage projectId={projectId} contributors={p.contributors} />
+            <CollabLineage nodes={p.lineageNodes} edgePairs={p.lineageEdges} contributors={p.contributors} />
           </div>
           <div className="proj-ws-collab-legend">
             {Object.entries({ dataset: '#0F9D8A', transformation: '#7C3AED', experiment: '#8B5CF6', result: '#16A34A' }).map(([type, color]) => (

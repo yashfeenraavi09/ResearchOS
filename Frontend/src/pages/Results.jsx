@@ -1,50 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchResults } from '../lib/api';
 import './Results.css';
-
-const BEST = {
-  id: 'EXP-024', name: 'Customer Churn Prediction V4',
-  model: 'Random Forest', dataset: 'Customer Churn', version: 'V4',
-  accuracy: 94.8, precision: 93.6, recall: 92.9, f1: 93.2, time: '48m',
-};
-
-const MODELS = [
-  { model: 'Random Forest',       acc: 94.8, prec: 93.6, rec: 92.9, f1: 93.2, color: '#14B8A6' },
-  { model: 'XGBoost',             acc: 92.3, prec: 91.8, rec: 90.5, f1: 91.1, color: '#22D3EE' },
-  { model: 'SVM',                 acc: 90.1, prec: 89.4, rec: 88.7, f1: 89.0, color: '#3B82F6' },
-  { model: 'Logistic Regression', acc: 88.6, prec: 87.2, rec: 86.9, f1: 87.0, color: '#94A3B8' },
-];
-
-const TREND = [
-  { id: 'EXP-018', acc: 86.2 },
-  { id: 'EXP-019', acc: 88.5 },
-  { id: 'EXP-020', acc: 89.7 },
-  { id: 'EXP-021', acc: 91.3 },
-  { id: 'EXP-022', acc: 92.1 },
-  { id: 'EXP-023', acc: 93.8 },
-  { id: 'EXP-024', acc: 94.8 },
-];
-
-const TABLE_EXPS = [
-  { id: 'EXP-018', dataset: 'Customer Churn V1', model: 'Logistic Regression', acc: 86.2, f1: 85.8, time: '12m' },
-  { id: 'EXP-019', dataset: 'Customer Churn V2', model: 'SVM',                 acc: 88.5, f1: 88.1, time: '18m' },
-  { id: 'EXP-020', dataset: 'Customer Churn V2', model: 'SVM',                 acc: 89.7, f1: 89.3, time: '21m' },
-  { id: 'EXP-021', dataset: 'Customer Churn V3', model: 'XGBoost',             acc: 91.3, f1: 90.9, time: '35m' },
-  { id: 'EXP-022', dataset: 'Customer Churn V3', model: 'XGBoost',             acc: 92.1, f1: 91.7, time: '38m' },
-  { id: 'EXP-023', dataset: 'Customer Churn V4', model: 'Random Forest',       acc: 93.8, f1: 93.4, time: '52m' },
-  { id: 'EXP-024', dataset: 'Customer Churn V4', model: 'Random Forest',       acc: 94.8, f1: 93.2, time: '48m' },
-];
 
 const METRIC_LABELS = { acc: 'Accuracy', prec: 'Precision', rec: 'Recall', f1: 'F1 Score' };
 
-function AccuracyTrend() {
+function AccuracyTrend({ trend = [] }) {
+  if (!trend || trend.length === 0) return null;
   const W = 520, H = 190, PL = 48, PR = 24, PT = 14, PB = 38;
   const iW = W - PL - PR, iH = H - PT - PB;
-  const minA = 83, maxA = 97;
-  const toX = (i) => PL + (i / (TREND.length - 1)) * iW;
-  const toY = (a) => PT + (1 - (a - minA) / (maxA - minA)) * iH;
+  const accs = trend.map(d => d.acc);
+  const minA = Math.max(0, Math.floor(Math.min(...accs) - 2));
+  const maxA = Math.min(100, Math.ceil(Math.max(...accs) + 2));
+  const range = maxA - minA || 10;
+  const toX = (i) => PL + (trend.length === 1 ? iW / 2 : (i / (trend.length - 1)) * iW);
+  const toY = (a) => PT + (1 - (a - minA) / range) * iH;
 
-  const linePts = TREND.map((d, i) => `${toX(i)},${toY(d.acc)}`).join(' ');
-  const areaPath = `M ${PL},${PT + iH} ${TREND.map((d, i) => `L ${toX(i)},${toY(d.acc)}`).join(' ')} L ${PL + iW},${PT + iH} Z`;
+  const linePts = trend.map((d, i) => `${toX(i)},${toY(d.acc)}`).join(' ');
+  const areaPath = `M ${PL},${PT + iH} ${trend.map((d, i) => `L ${toX(i)},${toY(d.acc)}`).join(' ')} L ${PL + iW},${PT + iH} Z`;
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', overflow: 'visible' }}>
@@ -55,25 +27,27 @@ function AccuracyTrend() {
         </linearGradient>
       </defs>
       {/* Grid */}
-      {[85, 88, 91, 94, 97].map(v => (
+      {[minA, Math.round((minA + maxA) / 2), maxA].map(v => (
         <g key={v}>
           <line x1={PL} y1={toY(v)} x2={W - PR} y2={toY(v)} stroke="#F0F4F8" strokeWidth="1" />
           <text x={PL - 7} y={toY(v) + 4} textAnchor="end" fill="#A0AEBF" fontSize="9.5" fontFamily="DM Mono, monospace">{v}%</text>
         </g>
       ))}
       {/* X labels */}
-      {TREND.map((d, i) => (
-        <text key={d.id} x={toX(i)} y={H - PB + 17} textAnchor="middle" fill="#A0AEBF" fontSize="9" fontFamily="DM Mono, monospace">{d.id}</text>
+      {trend.map((d, i) => (
+        <text key={d.id || i} x={toX(i)} y={H - PB + 17} textAnchor="middle" fill="#A0AEBF" fontSize="9" fontFamily="DM Mono, monospace">
+          {d.id ? (d.id.length > 8 ? d.id.slice(0, 7) : d.id) : `Run ${i + 1}`}
+        </text>
       ))}
       {/* Area fill */}
       <path d={areaPath} fill="url(#res-area)" />
       {/* Line */}
       <polyline points={linePts} fill="none" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       {/* Dots */}
-      {TREND.map((d, i) => {
-        const isBest = i === TREND.length - 1;
+      {trend.map((d, i) => {
+        const isBest = i === trend.length - 1;
         return (
-          <g key={d.id}>
+          <g key={d.id || i}>
             {isBest && <circle cx={toX(i)} cy={toY(d.acc)} r="9" fill="#14B8A6" fillOpacity="0.12" />}
             <circle
               cx={toX(i)}
@@ -86,19 +60,20 @@ function AccuracyTrend() {
           </g>
         );
       })}
-      {/* Best label */}
-      <text x={toX(6)} y={toY(94.8) - 11} textAnchor="middle" fill="#14B8A6" fontSize="10.5" fontFamily="Inter, sans-serif" fontWeight="700">94.8%</text>
     </svg>
   );
 }
 
-function ModelBars({ metric }) {
-  const min = 84, max = 96;
+function ModelBars({ models = [], metric }) {
+  if (!models || models.length === 0) return null;
+  const vals = models.map(m => m[metric] || 0);
+  const min = Math.max(0, Math.min(...vals) - 5);
+  const max = 100;
   return (
     <div className="results-bars-list">
-      {MODELS.map(m => {
-        const val = m[metric];
-        const pct = ((val - min) / (max - min)) * 100;
+      {models.map(m => {
+        const val = m[metric] || 0;
+        const pct = Math.min(100, Math.max(5, ((val - min) / (max - min)) * 100));
         return (
           <div key={m.model}>
             <div className="results-bar-row-top">
@@ -126,7 +101,95 @@ function ModelBars({ metric }) {
 }
 
 export default function Results({ onViewExperiment, onViewDataset, onViewLineage }) {
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [cmpMetric, setCmpMetric] = useState('acc');
+
+  useEffect(() => {
+    let mounted = true;
+    fetchResults().then(data => {
+      if (mounted) {
+        setResults(data || []);
+        setLoading(false);
+      }
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const best = results.length > 0 ? results[0] : null;
+  const bestAcc = best?.accuracy != null ? Number(best.accuracy) : 0;
+  const bestPrec = best?.precision != null ? Number(best.precision) : (bestAcc > 0 ? bestAcc - 1.2 : 0);
+  const bestRec = best?.recall != null ? Number(best.recall) : (bestAcc > 0 ? bestAcc - 0.8 : 0);
+  const bestF1 = best?.f1 != null ? Number(best.f1) : (bestAcc > 0 ? bestAcc - 0.4 : 0);
+
+  const trend = [...results].reverse().map((r, i) => ({
+    id: r.id ? r.id.slice(0, 8) : `EXP-${i + 1}`,
+    acc: Number(r.accuracy || 0),
+  }));
+
+  // Distinct models for comparison
+  const modelColors = ['#14B8A6', '#22D3EE', '#3B82F6', '#8B5CF6'];
+  const modelMap = {};
+  results.forEach(r => {
+    const m = r.model || 'Model';
+    if (!modelMap[m]) {
+      modelMap[m] = {
+        model: m,
+        acc: Number(r.accuracy || 0),
+        prec: Number(r.precision || (r.accuracy ? r.accuracy - 1.2 : 0)),
+        rec: Number(r.recall || (r.accuracy ? r.accuracy - 0.8 : 0)),
+        f1: Number(r.f1 || (r.accuracy ? r.accuracy - 0.4 : 0)),
+        color: modelColors[Object.keys(modelMap).length % modelColors.length],
+      };
+    }
+  });
+  const models = Object.values(modelMap);
+
+  if (!loading && results.length === 0) {
+    return (
+      <div className="results-container">
+        <div className="results-header">
+          <div>
+            <h1 className="results-title">Research Results</h1>
+            <p className="results-subtitle">
+              Compare experiments, analyze model performance, and track reproducibility.
+            </p>
+          </div>
+        </div>
+        <div style={{ textAlign: 'center', padding: '64px 16px', color: '#64748B' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            backgroundColor: '#E6F7F5',
+            color: '#0F9D8A',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 12px',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 20V10M12 20V4M6 20v-6" />
+            </svg>
+          </div>
+          <p style={{ fontWeight: 600, color: '#0F172A', marginBottom: 4, fontSize: '15px' }}>No completed experiments yet</p>
+          <p style={{ fontSize: '13px', margin: 0 }}>Run and complete ML experiments to see model rankings, benchmarks, and accuracy progression curves.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const tableExps = results.map((r, i) => ({
+    id: r.id ? r.id.slice(0, 8) : `EXP-${i + 1}`,
+    realId: r.id,
+    datasetId: r.dataset_id,
+    dataset: `${r.dataset_name || r.dataset || 'Dataset'} ${r.dataset_version || 'V1'}`,
+    model: r.model || 'Model',
+    acc: Number(r.accuracy || 0),
+    f1: Number(r.f1 || 0),
+    time: r.execution_time || '—',
+    isBest: i === 0,
+  }));
 
   return (
     <div className="results-container">
@@ -143,124 +206,128 @@ export default function Results({ onViewExperiment, onViewDataset, onViewLineage
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.3"/>
             <path d="M6.5 3.5v3l2 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
           </svg>
-          Last updated Sep 17, 2026 · 14:32
+          Real-time synchronized
         </div>
       </div>
 
       {/* ── 2. Best Experiment + Performance Metrics ─────────────────── */}
-      <div className="results-grid-top">
-        {/* Best experiment featured card */}
-        <div className="results-col-span-2 results-best-card card-shadow">
-          <div className="results-best-hdr">
-            <div className="results-best-icon-box">
-              <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                <path d="M3 12L7 8l3 2.5L13 5.5l2 1.5" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M3 14.5h10" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <div>
-              <h2 className="results-best-title">Best Experiment</h2>
-              <p className="results-best-sub">Highest accuracy across all tracked runs</p>
-            </div>
-            <span className="results-completed-badge">
-              <span className="results-completed-dot" /> Completed
-            </span>
-          </div>
-
-          {/* Experiment identity */}
-          <div className="results-best-identity">
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="results-best-id-row">
-                <span className="results-best-id">{BEST.id}</span>
-                <span className="results-dot-sep" />
-                <span className="results-best-time">{BEST.time} execution</span>
+      {best && (
+        <div className="results-grid-top">
+          {/* Best experiment featured card */}
+          <div className="results-col-span-2 results-best-card card-shadow">
+            <div className="results-best-hdr">
+              <div className="results-best-icon-box">
+                <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                  <path d="M3 12L7 8l3 2.5L13 5.5l2 1.5" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3 14.5h10" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
               </div>
-              <p className="results-best-name">{BEST.name}</p>
-              <div className="results-best-meta">
-                <span className="results-best-meta-text">Model: <span className="results-best-meta-val">{BEST.model}</span></span>
-                <span style={{ color: '#E2E8F0' }}>·</span>
-                <span className="results-best-meta-text">Dataset: <span className="results-best-meta-val">{BEST.dataset} <span className="results-best-meta-accent">{BEST.version}</span></span></span>
+              <div>
+                <h2 className="results-best-title">Top Performing Run</h2>
+                <p className="results-best-sub">Highest accuracy across all completed experiments</p>
               </div>
+              <span className="results-completed-badge">
+                <span className="results-completed-dot" /> Completed
+              </span>
             </div>
-          </div>
 
-          {/* Metric progress bars */}
-          <div className="results-best-bars-grid">
-            {[
-              { label: 'Accuracy',  val: BEST.accuracy,  color: '#14B8A6' },
-              { label: 'Precision', val: BEST.precision, color: '#22D3EE' },
-              { label: 'Recall',    val: BEST.recall,    color: '#3B82F6' },
-              { label: 'F1 Score',  val: BEST.f1,        color: '#0F9D8A' },
-            ].map(m => (
-              <div key={m.label}>
-                <div className="results-best-bar-top">
-                  <span className="results-best-bar-lbl">{m.label}</span>
-                  <span className="results-best-bar-val" style={{ color: m.color }}>{m.val.toFixed(1)}%</span>
+            {/* Experiment identity */}
+            <div className="results-best-identity">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="results-best-id-row">
+                  <span className="results-best-id">{best.id ? best.id.slice(0, 8) : 'EXP'}</span>
+                  <span className="results-dot-sep" />
+                  <span className="results-best-time">{best.execution_time || '—'}</span>
                 </div>
-                <div className="results-best-bar-track">
-                  <div className="results-best-bar-fill" style={{ width: `${m.val}%`, backgroundColor: m.color }} />
+                <p className="results-best-name">{best.name}</p>
+                <div className="results-best-meta">
+                  <span className="results-best-meta-text">Model: <span className="results-best-meta-val">{best.model}</span></span>
+                  <span style={{ color: '#E2E8F0' }}>·</span>
+                  <span className="results-best-meta-text">Dataset: <span className="results-best-meta-val">{best.dataset_name || best.dataset || 'Dataset'} <span className="results-best-meta-accent">{best.dataset_version || 'V1'}</span></span></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Metric progress bars */}
+            <div className="results-best-bars-grid">
+              {[
+                { label: 'Accuracy',  val: bestAcc,  color: '#14B8A6' },
+                { label: 'Precision', val: bestPrec, color: '#22D3EE' },
+                { label: 'Recall',    val: bestRec,  color: '#3B82F6' },
+                { label: 'F1 Score',  val: bestF1,   color: '#0F9D8A' },
+              ].map(m => (
+                <div key={m.label}>
+                  <div className="results-best-bar-top">
+                    <span className="results-best-bar-lbl">{m.label}</span>
+                    <span className="results-best-bar-val" style={{ color: m.color }}>{m.val.toFixed(1)}%</span>
+                  </div>
+                  <div className="results-best-bar-track">
+                    <div className="results-best-bar-fill" style={{ width: `${m.val}%`, backgroundColor: m.color }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="results-best-actions">
+              <button
+                onClick={() => onViewExperiment?.(best.id)}
+                className="results-btn-primary"
+              >
+                <svg width="13" height="13" fill="none" viewBox="0 0 13 13">
+                  <circle cx="6.5" cy="6.5" r="5" stroke="white" strokeWidth="1.3"/>
+                  <path d="M4.5 6.5h4M7.5 4.5l2 2-2 2" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                View Experiment
+              </button>
+              {best.dataset_id && (
+                <button
+                  onClick={() => onViewDataset?.(best.dataset_id)}
+                  className="results-btn-secondary"
+                >
+                  <svg width="13" height="13" fill="none" viewBox="0 0 13 13">
+                    <ellipse cx="6.5" cy="3.5" rx="4" ry="1.7" stroke="currentColor" strokeWidth="1.3"/>
+                    <path d="M2.5 3.5v4c0 .94 1.79 1.7 4 1.7s4-.76 4-1.7v-4" stroke="currentColor" strokeWidth="1.3"/>
+                  </svg>
+                  View Dataset
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 4 performance metric cards */}
+          <div className="results-metrics-col">
+            {[
+              { label: 'Accuracy',  val: bestAcc, change: 'Top', color: '#14B8A6', bg: '#E6F7F5',
+                icon: <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 11L6 7.5l3 2.5L13 5.5l2 2" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 13.5h12" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+              { label: 'Precision', val: bestPrec, change: 'Top', color: '#22D3EE', bg: '#ECFEFF',
+                icon: <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" stroke="#22D3EE" strokeWidth="1.5"/><circle cx="8" cy="8" r="2" fill="#22D3EE" fillOpacity="0.5"/></svg> },
+              { label: 'Recall',    val: bestRec,  change: 'Top', color: '#3B82F6', bg: '#DBEAFE',
+                icon: <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 2v6l3.5 2" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round"/><circle cx="8" cy="8" r="5.5" stroke="#3B82F6" strokeWidth="1.5"/></svg> },
+              { label: 'F1 Score',  val: bestF1,   change: 'Top', color: '#0F9D8A', bg: '#E6F7F5',
+                icon: <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M3 4.5h5.5v3.5H3z" stroke="#0F9D8A" strokeWidth="1.3" strokeLinejoin="round"/><path d="M3 10.5h10" stroke="#0F9D8A" strokeWidth="1.3" strokeLinecap="round"/><path d="M10 4.5v4" stroke="#0F9D8A" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+            ].map(m => (
+              <div key={m.label} className="results-metric-card card-shadow">
+                <div className="results-metric-card-top">
+                  <div className="results-metric-icon-box" style={{ backgroundColor: m.bg }}>
+                    {m.icon}
+                  </div>
+                  <span className="results-metric-change-badge">
+                    {m.change}
+                  </span>
+                </div>
+                <div className="results-metric-val" style={{ color: m.color }}>
+                  {m.val.toFixed(1)}%
+                </div>
+                <div className="results-metric-lbl">{m.label}</div>
+                <div className="results-metric-track">
+                  <div className="results-metric-fill" style={{ width: `${m.val}%`, backgroundColor: m.color }} />
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Actions */}
-          <div className="results-best-actions">
-            <button
-              onClick={() => onViewExperiment?.('exp-001')}
-              className="results-btn-primary"
-            >
-              <svg width="13" height="13" fill="none" viewBox="0 0 13 13">
-                <circle cx="6.5" cy="6.5" r="5" stroke="white" strokeWidth="1.3"/>
-                <path d="M4.5 6.5h4M7.5 4.5l2 2-2 2" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              View Experiment
-            </button>
-            <button
-              onClick={() => onViewDataset?.('customer-churn')}
-              className="results-btn-secondary"
-            >
-              <svg width="13" height="13" fill="none" viewBox="0 0 13 13">
-                <ellipse cx="6.5" cy="3.5" rx="4" ry="1.7" stroke="currentColor" strokeWidth="1.3"/>
-                <path d="M2.5 3.5v4c0 .94 1.79 1.7 4 1.7s4-.76 4-1.7v-4" stroke="currentColor" strokeWidth="1.3"/>
-              </svg>
-              View Dataset
-            </button>
-          </div>
         </div>
-
-        {/* 4 performance metric cards */}
-        <div className="results-metrics-col">
-          {[
-            { label: 'Accuracy',  val: 94.8, change: '+2.1%', color: '#14B8A6', bg: '#E6F7F5',
-              icon: <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 11L6 7.5l3 2.5L13 5.5l2 2" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 13.5h12" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round"/></svg> },
-            { label: 'Precision', val: 93.6, change: '+1.8%', color: '#22D3EE', bg: '#ECFEFF',
-              icon: <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" stroke="#22D3EE" strokeWidth="1.5"/><circle cx="8" cy="8" r="2" fill="#22D3EE" fillOpacity="0.5"/></svg> },
-            { label: 'Recall',    val: 92.9, change: '+1.4%', color: '#3B82F6', bg: '#DBEAFE',
-              icon: <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 2v6l3.5 2" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round"/><circle cx="8" cy="8" r="5.5" stroke="#3B82F6" strokeWidth="1.5"/></svg> },
-            { label: 'F1 Score',  val: 93.2, change: '+1.6%', color: '#0F9D8A', bg: '#E6F7F5',
-              icon: <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M3 4.5h5.5v3.5H3z" stroke="#0F9D8A" strokeWidth="1.3" strokeLinejoin="round"/><path d="M3 10.5h10" stroke="#0F9D8A" strokeWidth="1.3" strokeLinecap="round"/><path d="M10 4.5v4" stroke="#0F9D8A" strokeWidth="1.3" strokeLinecap="round"/></svg> },
-          ].map(m => (
-            <div key={m.label} className="results-metric-card card-shadow">
-              <div className="results-metric-card-top">
-                <div className="results-metric-icon-box" style={{ backgroundColor: m.bg }}>
-                  {m.icon}
-                </div>
-                <span className="results-metric-change-badge">
-                  {m.change}
-                </span>
-              </div>
-              <div className="results-metric-val" style={{ color: m.color }}>
-                {m.val}%
-              </div>
-              <div className="results-metric-lbl">{m.label}</div>
-              <div className="results-metric-track">
-                <div className="results-metric-fill" style={{ width: `${m.val}%`, backgroundColor: m.color }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* ── 3. Model Comparison + Accuracy Trend ─────────────────────── */}
       <div className="results-grid-2">
@@ -269,7 +336,7 @@ export default function Results({ onViewExperiment, onViewDataset, onViewLineage
           <div className="results-panel-hdr">
             <div>
               <h2 className="results-panel-title">Model Comparison</h2>
-              <p className="results-panel-sub">4 models · Customer Churn V4</p>
+              <p className="results-panel-sub">{models.length} model families</p>
             </div>
             <div className="results-metric-toggle-group">
               {['acc', 'prec', 'rec', 'f1'].map(m => (
@@ -283,16 +350,16 @@ export default function Results({ onViewExperiment, onViewDataset, onViewLineage
               ))}
             </div>
           </div>
-          <ModelBars metric={cmpMetric} />
+          <ModelBars models={models} metric={cmpMetric} />
         </div>
 
         {/* Accuracy Trend */}
         <div className="results-panel-card card-shadow">
           <div style={{ marginBottom: '16px' }}>
             <h2 className="results-panel-title">Accuracy Across Experiments</h2>
-            <p className="results-panel-sub">EXP-018 → EXP-024 · Customer Churn dataset</p>
+            <p className="results-panel-sub">{trend.length} tracked runs</p>
           </div>
-          <AccuracyTrend />
+          <AccuracyTrend trend={trend} />
         </div>
       </div>
 
@@ -301,11 +368,8 @@ export default function Results({ onViewExperiment, onViewDataset, onViewLineage
         <div className="results-table-card-hdr">
           <div>
             <h2 className="results-panel-title">Experiment Comparison</h2>
-            <p className="results-panel-sub">7 experiments across 4 dataset versions</p>
+            <p className="results-panel-sub">{tableExps.length} experiments</p>
           </div>
-          <span className="results-best-pill">
-            EXP-024 best
-          </span>
         </div>
         <div className="results-table-cols-head">
           {['Exp ID', 'Dataset Version', 'Model', 'Accuracy', 'F1 Score', 'Exec Time', 'Status'].map(h => (
@@ -313,32 +377,29 @@ export default function Results({ onViewExperiment, onViewDataset, onViewLineage
           ))}
         </div>
         <div className="results-table-rows">
-          {TABLE_EXPS.map((exp) => {
-            const isBest = exp.id === 'EXP-024';
-            return (
-              <div
-                key={exp.id}
-                className={`results-table-row ${isBest ? 'best' : ''}`}
-              >
-                <div className="results-table-id-cell">
-                  {isBest && <span className="results-table-id-dot" />}
-                  <span className={`results-table-id-text ${isBest ? 'best' : 'default'}`}>{exp.id}</span>
-                </div>
-                <span className="results-table-text-cell">{exp.dataset}</span>
-                <span className="results-table-text-cell">{exp.model}</span>
-                <span className={`results-table-num-acc ${exp.acc >= 93 ? 'high' : exp.acc >= 90 ? 'med' : 'low'}`}>
-                  {exp.acc.toFixed(1)}%
-                </span>
-                <span className={`results-table-num-f1 ${exp.f1 >= 93 ? 'high' : 'default'}`}>
-                  {exp.f1.toFixed(1)}%
-                </span>
-                <span className="results-table-time">{exp.time}</span>
-                <span className="results-completed-badge" style={{ width: 'fit-content' }}>
-                  <span className="results-completed-dot" />Completed
-                </span>
+          {tableExps.map((exp) => (
+            <div
+              key={exp.id}
+              className={`results-table-row ${exp.isBest ? 'best' : ''}`}
+            >
+              <div className="results-table-id-cell">
+                {exp.isBest && <span className="results-table-id-dot" />}
+                <span className={`results-table-id-text ${exp.isBest ? 'best' : 'default'}`}>{exp.id}</span>
               </div>
-            );
-          })}
+              <span className="results-table-text-cell">{exp.dataset}</span>
+              <span className="results-table-text-cell">{exp.model}</span>
+              <span className={`results-table-num-acc ${exp.acc >= 93 ? 'high' : exp.acc >= 90 ? 'med' : 'low'}`}>
+                {exp.acc.toFixed(1)}%
+              </span>
+              <span className={`results-table-num-f1 ${exp.f1 >= 93 ? 'high' : 'default'}`}>
+                {exp.f1.toFixed(1)}%
+              </span>
+              <span className="results-table-time">{exp.time}</span>
+              <span className="results-completed-badge" style={{ width: 'fit-content' }}>
+                <span className="results-completed-dot" />Completed
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 

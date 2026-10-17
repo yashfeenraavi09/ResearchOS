@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ResearchOSLogo from '../components/ResearchOSLogo';
+import { useAuth } from '../context/AuthContext';
 import './Login.css'; /* reuse shared auth styles */
 
 /* ── Icons ────────────────────────────────────────────────────────────────── */
@@ -138,10 +139,13 @@ const panelFeatures = [
 /* ── Component ────────────────────────────────────────────────────────────── */
 
 export default function Signup({ onSuccess, onLogin, onBack }) {
+    const { signUpWithEmail, signInWithGoogle } = useAuth();
     const [form, setForm] = useState({ name: '', email: '', org: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const [error, setError] = useState('');
+    const [confirmationSent, setConfirmationSent] = useState(false);
 
     function getPasswordStrength(pass) {
         if (!pass) return { score: 0, label: '', color: '' };
@@ -163,13 +167,36 @@ export default function Signup({ onSuccess, onLogin, onBack }) {
         setError('');
     }
 
-    function handleSubmit(e) {
+    async function handleSubmit(e) {
         e.preventDefault();
         if (!form.name.trim()) { setError('Please enter your full name.'); return; }
         if (!form.email.includes('@')) { setError('Please enter a valid email address.'); return; }
         if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return; }
         setLoading(true);
-        setTimeout(() => { setLoading(false); onSuccess(); }, 800);
+        setError('');
+        const { data, error } = await signUpWithEmail(form.email, form.password, {
+            full_name: form.name,
+            org: form.org,
+        });
+        setLoading(false);
+        if (error) {
+            setError(error.message || 'Sign up failed. Please try again.');
+        } else if (data?.user && !data.session) {
+            // Email confirmation required — Supabase sent a confirmation email
+            setConfirmationSent(true);
+        } else {
+            // Auto-confirmed (e.g. email confirmation disabled in Supabase dashboard)
+            onSuccess();
+        }
+    }
+
+    async function handleGoogle() {
+        setGoogleLoading(true);
+        setError('');
+        const { error } = await signInWithGoogle();
+        setGoogleLoading(false);
+        if (error) setError(error.message || 'Google sign in failed.');
+        // On success, Supabase redirects to Google then back — AuthContext picks up the session
     }
 
     return (
@@ -224,15 +251,21 @@ export default function Signup({ onSuccess, onLogin, onBack }) {
 
                     {/* OAuth */}
                     <div className="oauth-grid">
-                        <button type="button" onClick={onSuccess} className="oauth-btn">
+                        <button type="button" onClick={handleGoogle} disabled={googleLoading} className="oauth-btn">
                             <GoogleIcon size={18} />
-                            <span>Google</span>
-                        </button>
-                        <button type="button" onClick={onSuccess} className="oauth-btn">
-                            <GitHubIcon size={18} />
-                            <span>GitHub</span>
+                            <span>{googleLoading ? 'Redirecting…' : 'Google'}</span>
                         </button>
                     </div>
+
+                    {confirmationSent && (
+                        <div className="auth-success auth-success--large">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <div>
+                                <strong>Check your email!</strong>
+                                <p>We sent a confirmation link to <em>{form.email}</em>. Click it to activate your account.</p>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="auth-divider">
                         <span className="divider-line" />

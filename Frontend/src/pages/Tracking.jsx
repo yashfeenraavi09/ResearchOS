@@ -1,21 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchTracking } from '../lib/api';
 import './Tracking.css';
-
-const SESSION = {
-  id: 'sess-20240915-A4F2',
-  started: 'Sep 15, 2024 · 09:14 AM',
-  duration: '4h 38m',
-  datasetsTouched: [
-    { name: 'PubMed-2024', version: 'V4', action: 'loaded', time: '09:14' },
-    { name: 'PubMed-2024', version: 'V3', action: 'compared', time: '11:22' },
-  ],
-  experimentsRun: [
-    { id: 'exp-001', name: 'BERT-Large ft v3', model: 'BERT-Large', status: 'completed', accuracy: 94.2, time: '11:30' },
-  ],
-  modelsTrained: [
-    { name: 'BERT-Large v3', size: '1.3 GB', epochs: 10, time: '13:44' },
-  ],
-};
 
 const TRACKED_EVENT_ICONS = [
   <svg key="0" width="16" height="16" fill="none" viewBox="0 0 16 16"><ellipse cx="8" cy="4.5" rx="5" ry="2" stroke="currentColor" strokeWidth="1.3"/><path d="M3 4.5v4c0 1.1 2.24 2 5 2s5-.9 5-2v-4" stroke="currentColor" strokeWidth="1.3"/><path d="M3 8.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3" stroke="currentColor" strokeWidth="1.3"/></svg>,
@@ -32,7 +17,7 @@ const TRACKED_EVENTS = [
 ];
 
 const INITIAL_CONSENT = [
-  { id: 'datasets', label: 'Upload Dataset File', detail: 'Raw data files from PubMed-2024 V4 (3.2 GB)', checked: false, required: false },
+  { id: 'datasets', label: 'Upload Dataset File', detail: 'Raw data files (Requires explicit consent)', checked: false, required: false },
   { id: 'metadata', label: 'Log Experiment Metadata', detail: 'Run config, hyperparams, epoch metrics — no raw data', checked: true, required: true },
   { id: 'lineage', label: 'Sync Lineage Graph', detail: 'Node/edge structure of your pipeline', checked: true, required: false },
   { id: 'versions', label: 'Log Dataset Version Hashes', detail: 'MD5/SHA256 hashes for reproducibility', checked: true, required: false },
@@ -49,6 +34,24 @@ export default function Tracking() {
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
   const [tracking, setTracking] = useState(true);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadSession() {
+      try {
+        const sessions = await fetchTracking();
+        if (sessions && sessions.length > 0) {
+          setSession(sessions[0]);
+        }
+      } catch (err) {
+        console.error('Failed to load tracking session', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadSession();
+  }, []);
 
   function toggle(id) {
     setConsent(prev => prev.map(c => c.id === id && !c.required ? { ...c, checked: !c.checked } : c));
@@ -56,7 +59,7 @@ export default function Tracking() {
 
   async function handleSync() {
     setSyncing(true);
-    await new Promise(r => setTimeout(r, 1600));
+    await new Promise(r => setTimeout(r, 1200));
     setSyncing(false);
     setSynced(true);
     setTimeout(() => setSynced(false), 4000);
@@ -65,6 +68,10 @@ export default function Tracking() {
   function handleCancel() {
     setConsent(INITIAL_CONSENT);
   }
+
+  const datasetsTouched = session?.logs?.filter(l => l.type === 'dataset') || [];
+  const experimentsRun = session?.logs?.filter(l => l.type === 'experiment') || [];
+  const modelsTrained = session?.logs?.filter(l => l.type === 'model') || [];
 
   return (
     <div className="tracking-container">
@@ -96,7 +103,9 @@ export default function Tracking() {
           <div className="tracking-card card-shadow">
             <div className="tracking-card-header">
               <h2 className="tracking-card-title">Tracking Status</h2>
-              <span className="tracking-session-id">{SESSION.id}</span>
+              <span className="tracking-session-id">
+                {session?.session_token || session?.id || (loading ? 'Loading…' : 'ros-sdk-standby')}
+              </span>
             </div>
             <div className="tracking-events-grid">
               {TRACKED_EVENTS.map(ev => (
@@ -121,9 +130,11 @@ export default function Tracking() {
             <div className="tracking-card-header">
               <h2 className="tracking-card-title">Session Summary</h2>
               <div className="tracking-session-meta">
-                <span className="tracking-session-time">{SESSION.started}</span>
+                <span className="tracking-session-time">
+                  {session?.created_at ? new Date(session.created_at).toLocaleString() : 'Standby · Ready to track'}
+                </span>
                 <span style={{ margin: '0 6px' }}>·</span>
-                {SESSION.duration}
+                {session?.status || 'Live'}
               </div>
             </div>
 
@@ -131,23 +142,29 @@ export default function Tracking() {
             <div className="tracking-section-group">
               <h3 className="tracking-section-title">Datasets Touched</h3>
               <div className="tracking-items-list">
-                {SESSION.datasetsTouched.map((d, i) => (
-                  <div key={i} className="tracking-item-row">
-                    <span className="tracking-item-icon-teal">
-                      <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                        <ellipse cx="8" cy="4.5" rx="5" ry="2" stroke="currentColor" strokeWidth="1.3"/>
-                        <path d="M3 4.5v4c0 1.1 2.24 2 5 2s5-.9 5-2v-4" stroke="currentColor" strokeWidth="1.3"/>
-                        <path d="M3 8.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3" stroke="currentColor" strokeWidth="1.3"/>
-                      </svg>
-                    </span>
-                    <div className="tracking-item-content">
-                      <span className="tracking-item-name">{d.name}</span>
-                      <span className="tracking-item-version">{d.version}</span>
+                {datasetsTouched.length > 0 ? (
+                  datasetsTouched.map((d, i) => (
+                    <div key={i} className="tracking-item-row">
+                      <span className="tracking-item-icon-teal">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                          <ellipse cx="8" cy="4.5" rx="5" ry="2" stroke="currentColor" strokeWidth="1.3"/>
+                          <path d="M3 4.5v4c0 1.1 2.24 2 5 2s5-.9 5-2v-4" stroke="currentColor" strokeWidth="1.3"/>
+                          <path d="M3 8.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3" stroke="currentColor" strokeWidth="1.3"/>
+                        </svg>
+                      </span>
+                      <div className="tracking-item-content">
+                        <span className="tracking-item-name">{d.name || d.label}</span>
+                        <span className="tracking-item-version">{d.version || 'V1'}</span>
+                      </div>
+                      <span className="tracking-item-action">{d.action || 'loaded'}</span>
+                      <span className="tracking-item-timestamp">{d.time || 'just now'}</span>
                     </div>
-                    <span className="tracking-item-action">{d.action}</span>
-                    <span className="tracking-item-timestamp">{d.time}</span>
+                  ))
+                ) : (
+                  <div style={{ padding: '14px', fontSize: '13px', color: '#94A3B8', textAlign: 'center' }}>
+                    No dataset events recorded in current session
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -155,23 +172,29 @@ export default function Tracking() {
             <div className="tracking-section-group">
               <h3 className="tracking-section-title">Experiments Run</h3>
               <div className="tracking-items-list">
-                {SESSION.experimentsRun.map((e, i) => (
-                  <div key={i} className="tracking-item-row">
-                    <span className="tracking-item-icon-purple">
-                      <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                        <path d="M6 2v5.5L3 13h10l-3-5.5V2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M6 2h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                      </svg>
-                    </span>
-                    <div className="tracking-item-content">
-                      <span className="tracking-item-name">{e.name}</span>
-                      <span className="tracking-item-model">{e.model}</span>
+                {experimentsRun.length > 0 ? (
+                  experimentsRun.map((e, i) => (
+                    <div key={i} className="tracking-item-row">
+                      <span className="tracking-item-icon-purple">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                          <path d="M6 2v5.5L3 13h10l-3-5.5V2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M6 2h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                        </svg>
+                      </span>
+                      <div className="tracking-item-content">
+                        <span className="tracking-item-name">{e.name || 'Experiment'}</span>
+                        <span className="tracking-item-model">{e.model || 'Transformer'}</span>
+                      </div>
+                      <span className="tracking-item-acc">{e.accuracy ? `${e.accuracy}%` : '—'}</span>
+                      <span className="tracking-item-status">{e.status || 'completed'}</span>
+                      <span className="tracking-item-timestamp">{e.time || 'just now'}</span>
                     </div>
-                    <span className="tracking-item-acc">{e.accuracy}%</span>
-                    <span className="tracking-item-status">{e.status}</span>
-                    <span className="tracking-item-timestamp">{e.time}</span>
+                  ))
+                ) : (
+                  <div style={{ padding: '14px', fontSize: '13px', color: '#94A3B8', textAlign: 'center' }}>
+                    No experiments initiated in current session
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -179,24 +202,30 @@ export default function Tracking() {
             <div className="tracking-section-group">
               <h3 className="tracking-section-title">Models Trained</h3>
               <div className="tracking-items-list">
-                {SESSION.modelsTrained.map((m, i) => (
-                  <div key={i} className="tracking-item-row">
-                    <span className="tracking-item-icon-cyan">
-                      <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                        <rect x="3" y="5" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
-                        <path d="M6 5V4a2 2 0 0 1 4 0v1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                        <circle cx="6" cy="9" r="1" fill="currentColor"/>
-                        <circle cx="10" cy="9" r="1" fill="currentColor"/>
-                      </svg>
-                    </span>
-                    <div className="tracking-item-content">
-                      <span className="tracking-item-name">{m.name}</span>
+                {modelsTrained.length > 0 ? (
+                  modelsTrained.map((m, i) => (
+                    <div key={i} className="tracking-item-row">
+                      <span className="tracking-item-icon-cyan">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                          <rect x="3" y="5" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
+                          <path d="M6 5V4a2 2 0 0 1 4 0v1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                          <circle cx="6" cy="9" r="1" fill="currentColor"/>
+                          <circle cx="10" cy="9" r="1" fill="currentColor"/>
+                        </svg>
+                      </span>
+                      <div className="tracking-item-content">
+                        <span className="tracking-item-name">{m.name}</span>
+                      </div>
+                      <span className="tracking-item-sub">{m.epochs ? `${m.epochs} epochs` : '—'}</span>
+                      <span className="tracking-item-sub">{m.size || '—'}</span>
+                      <span className="tracking-item-timestamp">{m.time || 'just now'}</span>
                     </div>
-                    <span className="tracking-item-sub">{m.epochs} epochs</span>
-                    <span className="tracking-item-sub">{m.size}</span>
-                    <span className="tracking-item-timestamp">{m.time}</span>
+                  ))
+                ) : (
+                  <div style={{ padding: '14px', fontSize: '13px', color: '#94A3B8', textAlign: 'center' }}>
+                    No model checkpoints saved in current session
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

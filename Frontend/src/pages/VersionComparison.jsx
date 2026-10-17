@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { DATASETS } from '../data/datasets';
+import { useState, useEffect } from 'react';
+import { fetchDataset } from '../lib/api';
 import './VersionComparison.css';
 
 function fmt(n) {
+  if (n === undefined || n === null) return '0';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
   return n.toString();
@@ -19,20 +20,72 @@ function DiffBadge({ val, inverse }) {
 }
 
 export default function VersionComparison({ datasetId, onBack }) {
-  const ds = DATASETS.find(d => d.id === datasetId) || DATASETS[0];
-  const [leftIdx, setLeftIdx] = useState(Math.max(0, ds.versions.length - 2));
-  const [rightIdx, setRightIdx] = useState(ds.versions.length - 1);
+  const [ds, setDs] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [leftIdx, setLeftIdx] = useState(0);
+  const [rightIdx, setRightIdx] = useState(0);
 
-  const left = ds.versions[leftIdx] || ds.versions[0];
-  const right = ds.versions[rightIdx] || ds.versions[ds.versions.length - 1];
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await fetchDataset(datasetId);
+        if (data) {
+          const versions = (data.versions && data.versions.length > 0) ? data.versions : [
+            {
+              id: 'v1',
+              label: data.current_version || 'V1',
+              version: data.current_version || 'V1',
+              rows: data.rows_count || 1000,
+              columns: data.columns_count || 10,
+              size: data.size_str || '1.0 MB',
+              qualityScore: data.quality_score || 100,
+              missingValues: 0,
+              duplicates: 0,
+              author: 'You',
+              date: data.created_at ? new Date(data.created_at).toLocaleDateString() : 'Initial',
+            }
+          ];
+          setDs({ ...data, versions });
+          setLeftIdx(0);
+          setRightIdx(versions.length > 1 ? versions.length - 1 : 0);
+        }
+      } catch (err) {
+        console.error('Failed to load dataset for comparison', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (datasetId) load();
+  }, [datasetId]);
 
-  const rowDiff = right.rows - left.rows;
-  const colDiff = right.columns - left.columns;
-  const qualityDiff = right.qualityScore - left.qualityScore;
-  const missingDiff = right.missingValues - left.missingValues;
-  const dupDiff = right.duplicates - left.duplicates;
+  if (loading) {
+    return (
+      <div className="version-comp-container" style={{ padding: '60px 0', textAlign: 'center', color: '#6B7C93' }}>
+        Loading dataset versions for comparison…
+      </div>
+    );
+  }
 
-  const addedCols = colDiff > 0 ? Array.from({ length: colDiff }, (_, i) => ds.columnSchema?.[left.columns + i]?.name ?? `new_col_${i + 1}`) : [];
+  if (!ds) {
+    return (
+      <div className="version-comp-container" style={{ padding: '40px 0' }}>
+        <button onClick={onBack} className="version-comp-breadcrumb-btn">← Back to Datasets</button>
+        <div style={{ color: '#EF4444', marginTop: '20px' }}>Dataset not found.</div>
+      </div>
+    );
+  }
+
+  const left = ds.versions[leftIdx] || ds.versions[0] || {};
+  const right = ds.versions[rightIdx] || ds.versions[ds.versions.length - 1] || {};
+
+  const rowDiff = (right.rows || 0) - (left.rows || 0);
+  const colDiff = (right.columns || 0) - (left.columns || 0);
+  const qualityDiff = (right.qualityScore || 0) - (left.qualityScore || 0);
+  const missingDiff = (right.missingValues || 0) - (left.missingValues || 0);
+  const dupDiff = (right.duplicates || 0) - (left.duplicates || 0);
+
+  const addedCols = colDiff > 0 ? Array.from({ length: colDiff }, (_, i) => `new_col_${i + 1}`) : [];
   const removedCols = [];
 
   const maxShift = ds.pcaDrift && ds.pcaDrift.length > 0 ? Math.max(...ds.pcaDrift.map(p => p.shift)) : 0;

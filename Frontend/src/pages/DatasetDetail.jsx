@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { DATASETS } from '../data/datasets';
+import { useState, useEffect } from 'react';
+import { fetchDataset } from '../lib/api';
 import './DatasetDetail.css';
 
 function fmt(n) {
@@ -116,18 +116,67 @@ function DriftTab({ ds: dataset }) {
 }
 
 export default function DatasetDetail({ datasetId, onBack, onCompare }) {
-  const ds = DATASETS.find(d => d.id === datasetId) || DATASETS[0];
+  const [ds, setDs] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview');
   const [restoreMsg, setRestoreMsg] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    fetchDataset(datasetId).then(data => {
+      if (mounted) {
+        if (data) {
+          setDs({
+            ...data,
+            name: data.name || 'Untitled Dataset',
+            desc: data.description || data.desc || 'No description available',
+            type: data.type || 'Tabular',
+            currentVersion: data.current_version || data.currentVersion || 'V1',
+            rows: data.rows_count ?? data.rows ?? 0,
+            columns: data.columns_count ?? data.columns ?? 0,
+            size: data.size_str || data.size || '0 MB',
+            owner: data.owner || 'You',
+            updated: data.updated || (data.created_at ? new Date(data.created_at).toLocaleDateString() : 'Recently'),
+            qualityScore: data.quality_score ?? data.qualityScore ?? 100,
+            versions: data.versions || [],
+            quality: data.quality || data.quality_breakdown || [],
+            pcaDrift: data.pcaDrift || data.pca_drift || [],
+            columnSchema: data.columnSchema || data.column_schema || [],
+          });
+        }
+        setLoading(false);
+      }
+    });
+    return () => { mounted = false; };
+  }, [datasetId]);
 
   function handleRestore(version) {
     setRestoreMsg(`Version ${version} restored as active.`);
     setTimeout(() => setRestoreMsg(''), 3000);
   }
 
+  if (loading) {
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
+        <p>Loading dataset details...</p>
+      </div>
+    );
+  }
+
+  if (!ds) {
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
+        <p style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A' }}>Dataset not found</p>
+        <button onClick={onBack} className="datasetdetail-btn-primary" style={{ marginTop: '16px' }}>
+          Back to Datasets
+        </button>
+      </div>
+    );
+  }
+
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'versions', label: `Versions (${ds.versions.length})` },
+    { id: 'versions', label: `Versions (${(ds.versions || []).length})` },
     { id: 'quality', label: 'Quality Score' },
     { id: 'drift', label: 'Data Drift' },
     { id: 'schema', label: 'Schema' },

@@ -1,0 +1,50 @@
+# ── Environment & Secrets ─────────────────────────────────────────────────────
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+**/*.env
+
+# ── Python (Backend) ──────────────────────────────────────────────────────────
+Backend/venv/
+Backend/.venv/
+Backend/__pycache__/
+Backend/**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/*.pyd
+Backend/.pytest_cache/
+Backend/.mypy_cache/
+Backend/.ruff_cache/
+Backend/.coverage
+Backend/htmlcov/
+Backend/build/
+Backend/dist/
+Backend/*.egg-info/
+Backend/uploads/
+Backend/tmp/
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+Frontend/node_modules/
+Frontend/dist/
+Frontend/build/
+Frontend/.cache/
+
+# ── OS Files ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+**/.DS_Store
+
+# ── IDEs & Editors ────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-error.log*

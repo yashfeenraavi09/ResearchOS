@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  LINEAGE_NODES, LINEAGE_EDGES, NODE_CFG, EDGE_CFG
-} from '../data/lineage';
+import { fetchLineage } from '../lib/api';
+import { NODE_CFG, EDGE_CFG } from '../data/lineage';
 import './Lineage.css';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -276,9 +275,24 @@ export default function Lineage() {
   const [showEdgeLabels, setShowEdgeLabels] = useState(false);
   const [liveItems, setLiveItems] = useState([]);
   const [pulseIds, setPulseIds] = useState(new Set());
+  const [lineageData, setLineageData] = useState({ nodes: [], edges: [] });
+  const [loading, setLoading] = useState(true);
 
-  const allNodes = [...LINEAGE_NODES, ...liveItems.map(l => l.node)];
-  const allEdges = [...LINEAGE_EDGES, ...liveItems.map(l => l.edge)];
+  useEffect(() => {
+    let mounted = true;
+    fetchLineage().then(data => {
+      if (mounted) {
+        if (data && Array.isArray(data.nodes)) {
+          setLineageData(data);
+        }
+        setLoading(false);
+      }
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const allNodes = [...(lineageData.nodes || []), ...liveItems.map(l => l.node)];
+  const allEdges = [...(lineageData.edges || []), ...liveItems.map(l => l.edge)];
   const nodeMap = new Map(allNodes.map(n => [n.id, n]));
 
   const searchLower = search.toLowerCase();
@@ -471,7 +485,45 @@ export default function Lineage() {
 
       {/* ── Canvas + panel ───────────────────────────────────────────────────── */}
       <div className="lineage-main-area">
-        <div className="lineage-canvas-wrap">
+        <div className="lineage-canvas-wrap" style={{ position: 'relative' }}>
+          {visibleNodes.length === 0 && !loading && (
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              pointerEvents: 'none',
+              zIndex: 10,
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              padding: '24px 32px',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+              border: '1px solid #E2E8F0',
+            }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '50%',
+                backgroundColor: '#E6F7F5',
+                color: '#0F9D8A',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 10px',
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="5" cy="6" r="3" />
+                  <circle cx="19" cy="6" r="3" />
+                  <circle cx="12" cy="18" r="3" />
+                  <line x1="7.5" y1="7.5" x2="10.5" y2="15.5" />
+                  <line x1="16.5" y1="7.5" x2="13.5" y2="15.5" />
+                </svg>
+              </div>
+              <p style={{ fontWeight: 600, color: '#0F172A', margin: '0 0 4px', fontSize: '14px' }}>No lineage nodes found</p>
+              <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>Upload datasets and train models to map your research provenance.</p>
+            </div>
+          )}
           <svg
             ref={svgRef}
             className="lineage-svg-canvas"

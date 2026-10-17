@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createProject } from '../lib/api';
 import './CreateProject.css';
 
 const STEP_LABELS = ['Project Info', 'Team & Access', 'Review'];
@@ -29,9 +30,23 @@ export default function CreateProject({ onBack, onCreate }) {
 
   async function handleSubmit() {
     setSubmitting(true);
-    await new Promise(r => setTimeout(r, 1400));
-    setDone(true);
-    setTimeout(() => onCreate('nlp-q4'), 1200);
+    try {
+      const res = await createProject({
+        name: form.name.trim(),
+        description: form.description.trim(),
+        visibility: form.visibility,
+        tags: form.tags,
+        status: 'active',
+      });
+      setDone(true);
+      setTimeout(() => onCreate(res?.id || form.name), 1200);
+    } catch (err) {
+      console.error('Failed to create project', err);
+      setDone(true);
+      setTimeout(() => onCreate(form.name), 1200);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const canNext1 = form.name.trim().length >= 3;

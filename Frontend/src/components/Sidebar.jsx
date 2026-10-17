@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
 // ── Icons ────────────────────────────────────────────────────────────────────
@@ -63,6 +64,11 @@ function NavItem({ item, active, onClick, collapsed }) {
 }
 
 export default function Sidebar({ activePage, onNavigate, isOpen, onToggle }) {
+  const { user, signOut } = useAuth();
+  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || (user?.email ? user.email.split('@')[0] : 'Researcher');
+  const roleOrEmail = user?.user_metadata?.org || user?.email || 'ResearchOS Member';
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
     <aside className={`sidebar-container ${isOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
       {/* Logo row */}
@@ -140,16 +146,44 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onToggle }) {
       {/* User */}
       <div className={`sidebar-footer ${isOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
         {isOpen ? (
-          <div className="sidebar-user-card">
-            <div className="sidebar-avatar">A</div>
-            <div className="sidebar-user-info">
-              <p className="sidebar-user-name">Alex Chen</p>
-              <p className="sidebar-user-title">PhD Researcher</p>
+          <div className="sidebar-user-card" onClick={() => onNavigate('settings')} style={{ cursor: 'pointer' }} title="Account Settings">
+            <div className="sidebar-avatar">{initial}</div>
+            <div className="sidebar-user-info" style={{ flex: 1, minWidth: 0, paddingRight: '6px' }}>
+              <p className="sidebar-user-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
+              <p className="sidebar-user-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{roleOrEmail}</p>
             </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                signOut();
+              }}
+              title="Sign out"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                color: '#94A3B8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+                transition: 'color 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#94A3B8')}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
           </div>
         ) : (
-          <div className="sidebar-avatar-only">
-            <div className="sidebar-avatar" title="Alex Chen">A</div>
+          <div className="sidebar-avatar-only" onClick={() => onNavigate('settings')} style={{ cursor: 'pointer' }} title={`${displayName} (${roleOrEmail})`}>
+            <div className="sidebar-avatar">{initial}</div>
           </div>
         )}
       </div>

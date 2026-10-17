@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import Home from './pages/Home';
@@ -22,8 +23,24 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 
 export default function App() {
+  const { user, loading } = useAuth();
   const [page, setPage] = useState('landing');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Automatically redirect authenticated users to home, or unauthenticated users to landing
+  useEffect(() => {
+    if (loading) return;
+
+    if (user) {
+      if (page === 'landing' || page === 'login' || page === 'signup') {
+        setPage('home');
+      }
+    } else {
+      if (page !== 'login' && page !== 'signup') {
+        setPage('landing');
+      }
+    }
+  }, [user, loading, page]);
 
   const [datasetsView, setDatasetsView] = useState('list');
   const [selectedDatasetId, setSelectedDatasetId] = useState('');
@@ -192,6 +209,29 @@ export default function App() {
   }
 
   const meta = topBarMeta[metaKey] || topBarMeta[page];
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        height: '100vh',
+        width: '100vw',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F7F9FC',
+      }}>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          border: '3px solid #E2E8F0',
+          borderTopColor: '#0D9488',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   if (page === 'landing') {
     return (

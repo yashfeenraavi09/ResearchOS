@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { DATASETS } from '../data/datasets';
+import { useState, useEffect } from 'react';
+import { fetchDatasets } from '../lib/api';
 import './DatasetList.css';
 
 function QualityBadge({ score }) {
@@ -15,6 +15,7 @@ function QualityBadge({ score }) {
 }
 
 function fmt(n) {
+  if (!n) return '0';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
   return n.toString();
@@ -27,6 +28,15 @@ function DatasetIcon({ type }) {
 }
 
 function DatasetRow({ ds, onSelect }) {
+  const name = ds.name || 'Untitled Dataset';
+  const owner = ds.owner || 'You';
+  const type = ds.type || 'Tabular';
+  const version = ds.current_version || ds.currentVersion || 'V1';
+  const rows = ds.rows_count ?? ds.rows ?? 0;
+  const cols = ds.columns_count ?? ds.columns ?? 0;
+  const quality = ds.quality_score ?? ds.qualityScore ?? 100;
+  const updated = ds.updated || (ds.created_at ? new Date(ds.created_at).toLocaleDateString() : 'Recently');
+
   return (
     <div
       onClick={onSelect}
@@ -34,19 +44,19 @@ function DatasetRow({ ds, onSelect }) {
     >
       <div className="datasetlist-info-cell">
         <div className="datasetlist-icon-box">
-          <DatasetIcon type={ds.type} />
+          <DatasetIcon type={type} />
         </div>
         <div className="datasetlist-name-box">
-          <p className="datasetlist-name">{ds.name}</p>
-          <p className="datasetlist-owner">{ds.owner}</p>
+          <p className="datasetlist-name">{name}</p>
+          <p className="datasetlist-owner">{owner}</p>
         </div>
       </div>
-      <span className={`datasetlist-type-pill ${ds.type}`}>{ds.type}</span>
-      <span className="datasetlist-version-cell">{ds.currentVersion}</span>
-      <span className="datasetlist-num-cell">{fmt(ds.rows)}</span>
-      <span className="datasetlist-num-cell">{ds.columns}</span>
-      <QualityBadge score={ds.qualityScore} />
-      <span className="datasetlist-time-cell">{ds.updated}</span>
+      <span className={`datasetlist-type-pill ${type}`}>{type}</span>
+      <span className="datasetlist-version-cell">{version}</span>
+      <span className="datasetlist-num-cell">{fmt(rows)}</span>
+      <span className="datasetlist-num-cell">{cols}</span>
+      <QualityBadge score={quality} />
+      <span className="datasetlist-time-cell">{updated}</span>
       <button
         onClick={e => { e.stopPropagation(); onSelect(); }}
         className="datasetlist-open-btn"
@@ -58,14 +68,33 @@ function DatasetRow({ ds, onSelect }) {
 }
 
 export default function DatasetList({ onSelect, onUpload }) {
+  const [datasets, setDatasets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('updated');
   const [search, setSearch] = useState('');
 
-  const filtered = DATASETS
+  useEffect(() => {
+    let mounted = true;
+    fetchDatasets().then(data => {
+      if (mounted) {
+        setDatasets(data || []);
+        setLoading(false);
+      }
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const filtered = datasets
     .filter(d => filter === 'all' || d.type === filter)
-    .filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.desc.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => sort === 'quality' ? b.qualityScore - a.qualityScore : sort === 'rows' ? b.rows - a.rows : 0);
+    .filter(d => (d.name || '').toLowerCase().includes(search.toLowerCase()) || (d.description || d.desc || '').toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      const qA = a.quality_score ?? a.qualityScore ?? 100;
+      const qB = b.quality_score ?? b.qualityScore ?? 100;
+      const rA = a.rows_count ?? a.rows ?? 0;
+      const rB = b.rows_count ?? b.rows ?? 0;
+      return sort === 'quality' ? qB - qA : sort === 'rows' ? rB - rA : 0;
+    });
 
   return (
     <div className="datasetlist-container">
@@ -73,7 +102,7 @@ export default function DatasetList({ onSelect, onUpload }) {
       <div className="datasetlist-header">
         <div>
           <h1 className="datasetlist-title">Datasets</h1>
-          <p className="datasetlist-subtitle">{DATASETS.length} datasets · {DATASETS.reduce((a, b) => a + b.versions.length, 0)} total versions</p>
+          <p className="datasetlist-subtitle">{datasets.length} {datasets.length === 1 ? 'dataset' : 'datasets'} in your workspace</p>
         </div>
         <button
           onClick={onUpload}
@@ -130,9 +159,19 @@ export default function DatasetList({ onSelect, onUpload }) {
           ))}
         </div>
         <div>
-          {filtered.map(ds => (
-            <DatasetRow key={ds.id} ds={ds} onSelect={() => onSelect(ds.id)} />
-          ))}
+          {filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 16px', color: '#64748B' }}>
+              <p style={{ fontWeight: 600, color: '#0F172A', marginBottom: 4 }}>No datasets found</p>
+              <p style={{ fontSize: '13px', marginBottom: 16 }}>Upload your first dataset to start tracking versions and data quality.</p>
+              <button onClick={onUpload} className="datasetlist-upload-btn" style={{ margin: '0 auto' }}>
+                + Upload Dataset
+              </button>
+            </div>
+          ) : (
+            filtered.map(ds => (
+              <DatasetRow key={ds.id} ds={ds} onSelect={() => onSelect(ds.id)} />
+            ))
+          )}
         </div>
       </div>
     </div>

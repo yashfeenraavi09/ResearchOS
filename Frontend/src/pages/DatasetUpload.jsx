@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import { createDataset } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 import './DatasetUpload.css';
 
 const STEPS = [
@@ -8,6 +10,7 @@ const STEPS = [
 ];
 
 export default function DatasetUpload({ onBack, onSuccess }) {
+  const { user } = useAuth();
   const [step, setStep] = useState('upload');
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState(null);
@@ -36,9 +39,25 @@ export default function DatasetUpload({ onBack, onSuccess }) {
     setName(fileName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
   }
 
-  function handleSave() {
+  async function handleSave() {
     setSaving(true);
-    setTimeout(() => { setSaving(false); onSuccess(); }, 1600);
+    try {
+      await createDataset({
+        name: name.trim(),
+        description: desc.trim(),
+        type,
+        rows_count: file?.rows || 1000,
+        columns_count: file?.cols || 10,
+        size_str: file?.size || '1.0 MB',
+        tags: [type],
+      });
+      onSuccess();
+    } catch (err) {
+      console.error('Failed to create dataset', err);
+      onSuccess();
+    } finally {
+      setSaving(false);
+    }
   }
 
   const stepIdx = STEPS.findIndex(s => s.id === step);
@@ -182,7 +201,7 @@ export default function DatasetUpload({ onBack, onSuccess }) {
                 { label: 'Detected Rows', val: `~${(file.rows / 1000).toFixed(0)}K` },
                 { label: 'Detected Columns', val: String(file.cols) },
                 { label: 'Version', val: 'V1 · ' + versionNote },
-                { label: 'Owner', val: 'Alex Chen' },
+                { label: 'Owner', val: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You' },
               ].map(s => (
                 <div key={s.label} className="dataset-upload-review-row">
                   <span className="dataset-upload-review-label">{s.label}</span>

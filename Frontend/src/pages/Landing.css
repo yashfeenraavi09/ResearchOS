@@ -1906,7 +1906,6 @@
 
 /* ─── MINIMALIST PRECISION DOT CURSOR (Linear / Figma style) ──────────── */
 @media (pointer: fine) {
-    body,
     .landing-light-container,
     .landing-light-container * {
         cursor: none !important;

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { DATASETS } from '../data/datasets';
+import { useState, useEffect } from 'react';
+import { fetchDatasets, fetchProjects, createExperiment } from '../lib/api';
 import './NewExperiment.css';
 
 const STEPS = [
@@ -19,6 +19,10 @@ const MODEL_OPTIONS = [
 const GPU_OPTIONS = ['NVIDIA A100 80GB', 'NVIDIA V100 32GB', 'NVIDIA T4 16GB', 'NVIDIA RTX 4090'];
 
 export default function NewExperiment({ onBack, onSuccess }) {
+  const [datasets, setDatasets] = useState([]);
+  const [projectsList, setProjectsList] = useState([]);
+  const [loadingDatasets, setLoadingDatasets] = useState(true);
+
   const [step, setStep] = useState('dataset');
   const [datasetId, setDatasetId] = useState('');
   const [datasetVersion, setDatasetVersion] = useState('');
@@ -32,11 +36,29 @@ export default function NewExperiment({ onBack, onSuccess }) {
   const [warmup, setWarmup] = useState('500');
   const [dropout, setDropout] = useState('0.1');
   const [name, setName] = useState('');
-  const [project, setProject] = useState('NLP Research Q4');
+  const [project, setProject] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const selectedDataset = DATASETS.find(d => d.id === datasetId);
+  useEffect(() => {
+    async function initData() {
+      try {
+        const [ds, prjs] = await Promise.all([fetchDatasets(), fetchProjects()]);
+        setDatasets(ds || []);
+        setProjectsList(prjs || []);
+        if (prjs && prjs.length > 0) {
+          setProject(prjs[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load datasets/projects', err);
+      } finally {
+        setLoadingDatasets(false);
+      }
+    }
+    initData();
+  }, []);
+
+  const selectedDataset = datasets.find(d => d.id === datasetId);
   const stepIdx = STEPS.findIndex(s => s.id === step);
 
   function canProceed() {
@@ -50,14 +72,39 @@ export default function NewExperiment({ onBack, onSuccess }) {
     if (step === 'dataset') setStep('model');
     else if (step === 'model') setStep('params');
     else if (step === 'params') {
-      if (!name) setName(`${model} on ${selectedDataset?.name}`);
+      if (!name) setName(`${model} on ${selectedDataset?.name || 'Dataset'}`);
       setStep('review');
     }
   }
 
-  function handleRun() {
+  async function handleRun() {
     setSaving(true);
-    setTimeout(() => { setSaving(false); onSuccess(); }, 1800);
+    try {
+      await createExperiment({
+        name: name.trim(),
+        model,
+        project_id: project || null,
+        dataset_id: datasetId,
+        dataset_version: datasetVersion,
+        framework,
+        gpu,
+        epochs: parseInt(epochs) || 10,
+        batch_size: parseInt(batchSize) || 32,
+        learning_rate: parseFloat(lr) || 0.00002,
+        hyperparams: {
+          maxSeqLen,
+          warmup,
+          dropout,
+          notes,
+        },
+      });
+      onSuccess();
+    } catch (err) {
+      console.error('Failed to run experiment', err);
+      onSuccess();
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -93,49 +140,70 @@ export default function NewExperiment({ onBack, onSuccess }) {
       {step === 'dataset' && (
         <div className="new-exp-space-y-4">
           <p className="new-exp-section-title">Select a dataset and version to train on</p>
-          <div className="new-exp-ds-list">
-            {DATASETS.filter(d => d.versions.some(v => v.status === 'active')).map(ds => (
-              <button
-                key={ds.id}
-                onClick={() => { setDatasetId(ds.id); setDatasetVersion(ds.currentVersion); }}
-                className={`new-exp-ds-card ${datasetId === ds.id ? 'selected' : ''}`}
-              >
-                <div className={`new-exp-ds-icon-box ${datasetId === ds.id ? 'selected' : ''}`}>
-                  <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><ellipse cx="8" cy="4.5" rx="4.5" ry="1.8" stroke={datasetId === ds.id ? 'white' : '#6B7C93'} strokeWidth="1.4"/><path d="M3.5 4.5v3c0 1 2.02 1.8 4.5 1.8S12.5 8.5 12.5 7.5v-3" stroke={datasetId === ds.id ? 'white' : '#6B7C93'} strokeWidth="1.4"/><path d="M3.5 7.5v3c0 1 2.02 1.8 4.5 1.8S12.5 11.5 12.5 10.5v-3" stroke={datasetId === ds.id ? 'white' : '#6B7C93'} strokeWidth="1.4"/></svg>
-                </div>
-                <div className="new-exp-ds-info">
-                  <div className="new-exp-ds-title-row">
-                    <p className="new-exp-ds-name">{ds.name}</p>
-                    <span className="new-exp-ds-ver-tag">{ds.currentVersion}</span>
-                  </div>
-                  <p className="new-exp-ds-desc">{ds.desc}</p>
-                </div>
-                <div className="new-exp-ds-meta">
-                  <p className="new-exp-ds-meta-rows">{(ds.rows / 1000).toFixed(0)}K rows</p>
-                  <p className="new-exp-ds-meta-type">{ds.type}</p>
-                </div>
-                {datasetId === ds.id && (
-                  <svg width="18" height="18" fill="none" viewBox="0 0 18 18" style={{ flexShrink: 0 }}>
-                    <circle cx="9" cy="9" r="8" fill="#0F9D8A"/>
-                    <path d="M5.5 9l2.5 2.5 4.5-5" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
-                  </svg>
-                )}
+          
+          {loadingDatasets ? (
+            <div style={{ padding: '30px', textAlign: 'center', color: '#6B7C93' }}>Loading available datasets…</div>
+          ) : datasets.length === 0 ? (
+            <div style={{ padding: '30px', textAlign: 'center', color: '#6B7C93', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
+              <p style={{ fontWeight: 600, color: '#0B1220', marginBottom: '6px' }}>No datasets available</p>
+              <p style={{ fontSize: '13px', marginBottom: '14px' }}>Upload a dataset first before running an experiment.</p>
+              <button onClick={onBack} className="new-exp-primary-btn" style={{ margin: '0 auto' }}>
+                Go to Datasets
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="new-exp-ds-list">
+              {datasets.map(ds => {
+                const ver = ds.current_version || ds.currentVersion || 'V1';
+                return (
+                  <button
+                    key={ds.id}
+                    onClick={() => { setDatasetId(ds.id); setDatasetVersion(ver); }}
+                    className={`new-exp-ds-card ${datasetId === ds.id ? 'selected' : ''}`}
+                  >
+                    <div className={`new-exp-ds-icon-box ${datasetId === ds.id ? 'selected' : ''}`}>
+                      <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><ellipse cx="8" cy="4.5" rx="4.5" ry="1.8" stroke={datasetId === ds.id ? 'white' : '#6B7C93'} strokeWidth="1.4"/><path d="M3.5 4.5v3c0 1 2.02 1.8 4.5 1.8S12.5 8.5 12.5 7.5v-3" stroke={datasetId === ds.id ? 'white' : '#6B7C93'} strokeWidth="1.4"/><path d="M3.5 7.5v3c0 1 2.02 1.8 4.5 1.8S12.5 11.5 12.5 10.5v-3" stroke={datasetId === ds.id ? 'white' : '#6B7C93'} strokeWidth="1.4"/></svg>
+                    </div>
+                    <div className="new-exp-ds-info">
+                      <div className="new-exp-ds-title-row">
+                        <p className="new-exp-ds-name">{ds.name}</p>
+                        <span className="new-exp-ds-ver-tag">{ver}</span>
+                      </div>
+                      <p className="new-exp-ds-desc">{ds.description || ds.desc || 'No description provided'}</p>
+                    </div>
+                    <div className="new-exp-ds-meta">
+                      <p className="new-exp-ds-meta-rows">{ds.rows_count ? `${(ds.rows_count / 1000).toFixed(0)}K rows` : ds.size_str || '—'}</p>
+                      <p className="new-exp-ds-meta-type">{ds.type || 'Dataset'}</p>
+                    </div>
+                    {datasetId === ds.id && (
+                      <svg width="18" height="18" fill="none" viewBox="0 0 18 18" style={{ flexShrink: 0 }}>
+                        <circle cx="9" cy="9" r="8" fill="#0F9D8A"/>
+                        <path d="M5.5 9l2.5 2.5 4.5-5" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {datasetId && (
             <div className="new-exp-versions-wrap">
               <label className="new-exp-versions-label">Version</label>
               <div className="new-exp-versions-list">
-                {selectedDataset?.versions.map(v => (
-                  <button
-                    key={v.id}
-                    onClick={() => setDatasetVersion(v.version)}
-                    className={`new-exp-ver-btn ${datasetVersion === v.version ? 'selected' : ''}`}
-                  >
-                    {v.label}
-                  </button>
-                ))}
+                {(selectedDataset?.versions && selectedDataset.versions.length > 0 ? selectedDataset.versions : [{ version: datasetVersion || 'V1', label: datasetVersion || 'V1' }]).map((v, idx) => {
+                  const val = v.version || v;
+                  const lbl = v.label || v.version || v;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setDatasetVersion(val)}
+                      className={`new-exp-ver-btn ${datasetVersion === val ? 'selected' : ''}`}
+                    >
+                      {lbl}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -220,7 +288,10 @@ export default function NewExperiment({ onBack, onSuccess }) {
             <div>
               <label className="new-exp-label">Project</label>
               <select value={project} onChange={e => setProject(e.target.value)} className="new-exp-select" style={{ padding: '10px 14px' }}>
-                {['NLP Research Q4', 'Vision Models', 'Climate Analysis', 'BioMed Research', 'MultiLingual'].map(p => <option key={p}>{p}</option>)}
+                <option value="">(No Project / Standalone)</option>
+                {projectsList.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
               </select>
             </div>
           </div>

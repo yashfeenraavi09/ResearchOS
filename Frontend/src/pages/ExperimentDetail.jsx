@@ -1,10 +1,67 @@
-import { useState } from 'react';
-import { EXPERIMENTS } from '../data/experiments';
+import { useState, useEffect } from 'react';
+import { fetchExperiment } from '../lib/api';
 import './ExperimentDetail.css';
 
 export default function ExperimentDetail({ experimentId, onBack, onViewDataset, onViewLineage }) {
-  const exp = EXPERIMENTS.find(e => e.id === experimentId) || EXPERIMENTS[0];
+  const [exp, setExp] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview');
+
+  useEffect(() => {
+    let mounted = true;
+    fetchExperiment(experimentId).then(data => {
+      if (mounted) {
+        if (data) {
+          setExp({
+            ...data,
+            name: data.name || 'Untitled Experiment',
+            project: data.project_name || data.project || 'Project',
+            framework: data.framework || 'PyTorch',
+            model: data.model || 'Unknown Model',
+            modelFamily: data.model_family || data.modelFamily || 'Transformer',
+            datasetId: data.dataset_id || data.datasetId,
+            datasetName: data.dataset_name || data.datasetName || 'Dataset',
+            datasetVersion: data.dataset_version || data.datasetVersion || 'V1',
+            status: data.status || 'completed',
+            accuracy: data.accuracy ?? 0,
+            precision: data.precision ?? 0,
+            recall: data.recall ?? 0,
+            f1: data.f1 ?? 0,
+            loss: data.loss ?? 0,
+            epochs: data.epochs ?? 10,
+            batchSize: data.batch_size ?? data.batchSize ?? 32,
+            learningRate: data.learning_rate ?? data.learningRate ?? 0.001,
+            gpu: data.gpu || 'NVIDIA A100',
+            executionTime: data.execution_time || data.executionTime || '0s',
+            hyperparams: data.hyperparams || [],
+            trainingCurves: data.metrics_history || [],
+            rocCurve: data.roc_curve || [],
+          });
+        }
+        setLoading(false);
+      }
+    });
+    return () => { mounted = false; };
+  }, [experimentId]);
+
+  if (loading) {
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
+        <p>Loading experiment details...</p>
+      </div>
+    );
+  }
+
+  if (!exp) {
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
+        <p style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A' }}>Experiment not found</p>
+        <button onClick={onBack} className="exp-detail-primary-btn" style={{ marginTop: '16px' }}>
+          Back to Experiments
+        </button>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: 'overview', label: 'Overview' },

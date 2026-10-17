@@ -1,29 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { fetchDashboard } from '../lib/api';
 import './Home.css';
-
-const recentExperiments = [
-  { id: 'exp-001', name: 'BERT-Large fine-tune v3', dataset: 'PubMed-2024', status: 'completed', accuracy: '94.2%', time: '2h ago', model: 'BERT-Large', f1: '94.2' },
-  { id: 'exp-002', name: 'ResNet ablation study', dataset: 'ImageNet-subset', status: 'running', accuracy: '87.1%', time: 'Running', model: 'ResNet-50', f1: '—' },
-  { id: 'exp-003', name: 'RoBERTa-Large run', dataset: 'PubMed-2024', status: 'completed', accuracy: '92.7%', time: '1d ago', model: 'RoBERTa-Large', f1: '92.6' },
-  { id: 'exp-004', name: 'Cross-lingual NER', dataset: 'MultiNERD', status: 'failed', accuracy: '—', time: '2d ago', model: 'XLM-R', f1: '—' },
-  { id: 'exp-005', name: 'Time-series forecast v2', dataset: 'Climate-NOAA', status: 'completed', accuracy: '88.9%', time: '3d ago', model: 'Temporal Fusion', f1: '88.7' },
-];
-
-const datasetVersions = [
-  { name: 'PubMed-2024', versions: 4, size: '3.2 GB', updated: '2h ago', type: 'NLP', rows: '2.4M' },
-  { name: 'ImageNet-subset', versions: 2, size: '12.7 GB', updated: '1d ago', type: 'Vision', rows: '130K' },
-  { name: 'Climate-NOAA', versions: 6, size: '8.1 GB', updated: '3d ago', type: 'Tabular', rows: '18.2M' },
-  { name: 'arXiv-CS', versions: 3, size: '1.9 GB', updated: '5d ago', type: 'NLP', rows: '842K' },
-];
-
-const activities = [
-  { icon: 'exp', text: 'Experiment "BERT-Large fine-tune v3" completed — 94.2% accuracy', time: '2 hours ago', type: 'experiment', color: '#8B5CF6' },
-  { icon: 'ds', text: 'Dataset "PubMed-2024 V4" uploaded by Alex Chen', time: '3 hours ago', type: 'dataset', color: '#0F9D8A' },
-  { icon: 'lin', text: 'Lineage graph updated with 3 new nodes', time: '5 hours ago', type: 'lineage', color: '#3B82F6' },
-  { icon: 'team', text: 'Sara Okonkwo completed Experiment #5 in NLP Research Q4', time: '1 day ago', type: 'collab', color: '#F59E0B' },
-  { icon: 'res', text: 'New best result: 94.2% on PubMed-2024 evaluation set', time: '2 days ago', type: 'result', color: '#10B981' },
-  { icon: 'proj', text: 'Project "Vision Models Research" marked active by Marcus Lee', time: '3 days ago', type: 'project', color: '#6366F1' },
-];
 
 const STATUS_CFG = {
   completed: { bg: 'status-completed', text: 'status-completed', dot: 'status-completed', label: 'Completed' },
@@ -237,11 +215,49 @@ function ResearchIllustration() {
 }
 
 export default function Home({ onNavigate }) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('recent');
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchDashboard().then(data => {
+      if (mounted) {
+        setDashboardData(data);
+        setLoading(false);
+      }
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  // Derive display name from Supabase user metadata or email
+  const displayName = user?.user_metadata?.full_name
+    || user?.user_metadata?.name
+    || user?.email?.split('@')[0]
+    || 'Researcher';
+
+  // First name only for greeting
+  const firstName = displayName.split(' ')[0];
+
+  // Time-of-day greeting
+  const hour = new Date().getHours();
+  const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const exps = dashboardData?.recent_experiments || [];
+  const datasets = dashboardData?.recent_datasets || [];
+  const activities = dashboardData?.activities || [];
+  const stats = dashboardData?.stats || {
+    total_datasets: 0,
+    total_experiments: 0,
+    active_experiments: 0,
+    best_accuracy: '—',
+    total_projects: 0,
+  };
 
   const displayedExps = activeTab === 'recent'
-    ? recentExperiments
-    : [...recentExperiments].filter(e => e.accuracy !== '—').sort((a, b) => parseFloat(b.accuracy) - parseFloat(a.accuracy));
+    ? exps
+    : [...exps].filter(e => e.accuracy != null && e.accuracy !== '—').sort((a, b) => parseFloat(b.accuracy) - parseFloat(a.accuracy));
 
   return (
     <div className="home-container">
@@ -283,10 +299,8 @@ export default function Home({ onNavigate }) {
 
             {/* Heading */}
             <h1 className="home-hero-heading">
-              Turn your research into<br />
-              <span className="home-hero-heading-gradient">
-                reproducible results.
-              </span>
+              {timeGreeting}, <span className="home-hero-heading-gradient">{firstName}.</span><br />
+              <span style={{ fontSize: '0.65em', fontWeight: 700, opacity: 0.85 }}>Your research workspace awaits.</span>
             </h1>
 
             {/* Supporting text */}
@@ -322,9 +336,9 @@ export default function Home({ onNavigate }) {
         {/* Bottom status bar */}
         <div className="home-hero-statusbar">
           {[
-            { label: 'Best Accuracy', value: '94.2%', spark: [89.4, 90.1, 92.7, 94.2], color: '#14B8A6' },
-            { label: 'Experiments', value: '86', spark: [60, 65, 70, 76, 80, 86], color: '#22D3EE' },
-            { label: 'Datasets', value: '24', spark: [18, 19, 20, 22, 24], color: '#A78BFA' },
+            { label: 'Best Accuracy', value: stats.best_accuracy || '—', spark: [89.4, 90.1, 92.7, 94.2], color: '#14B8A6' },
+            { label: 'Experiments', value: String(stats.total_experiments ?? 0), spark: [60, 65, 70, 76, 80, 86], color: '#22D3EE' },
+            { label: 'Datasets', value: String(stats.total_datasets ?? 0), spark: [18, 19, 20, 22, 24], color: '#A78BFA' },
           ].map((m, i) => (
             <div key={i} className="home-hero-metric-item">
               <div>
@@ -336,8 +350,8 @@ export default function Home({ onNavigate }) {
             </div>
           ))}
           <div className="home-hero-running-badge">
-            <span className="home-hero-running-dot animate-pulse" />
-            <span>1 experiment running</span>
+            <span className={`home-hero-running-dot ${stats.active_experiments > 0 ? 'animate-pulse' : ''}`} />
+            <span>{stats.active_experiments} {stats.active_experiments === 1 ? 'experiment running' : 'experiments running'}</span>
           </div>
         </div>
       </div>
@@ -491,25 +505,35 @@ export default function Home({ onNavigate }) {
             <span>#</span><span>Experiment</span><span>Status</span><span style={{ textAlign: 'right' }}>Accuracy</span><span style={{ textAlign: 'right' }}>F1</span><span style={{ textAlign: 'right' }}>Time</span>
           </div>
           <div>
-            {displayedExps.map((exp, i) => {
-              const s = STATUS_CFG[exp.status];
-              return (
-                <div key={exp.id} className="home-experiments-table-row">
-                  <span className="home-exp-num">{String(i + 1).padStart(2, '0')}</span>
-                  <div className="home-exp-info">
-                    <p className="home-exp-name">{exp.name}</p>
-                    <p className="home-exp-meta">{exp.dataset} · {exp.model}</p>
+            {displayedExps.length === 0 ? (
+              <div style={{ padding: '36px 16px', textAlign: 'center', color: '#64748B' }}>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: '#0F172A' }}>No experiments run yet</p>
+                <p style={{ margin: '4px 0 16px', fontSize: '13px' }}>Configure and launch your first ML training run.</p>
+                <button onClick={() => onNavigate('experiments')} className="home-hero-primary-btn" style={{ margin: '0 auto', fontSize: '13px', padding: '6px 16px' }}>
+                  + New Experiment
+                </button>
+              </div>
+            ) : (
+              displayedExps.map((exp, i) => {
+                const s = STATUS_CFG[exp.status] || STATUS_CFG.queued;
+                return (
+                  <div key={exp.id || i} className="home-experiments-table-row">
+                    <span className="home-exp-num">{String(i + 1).padStart(2, '0')}</span>
+                    <div className="home-exp-info">
+                      <p className="home-exp-name">{exp.name}</p>
+                      <p className="home-exp-meta">{exp.dataset_name || exp.dataset || 'Dataset'} · {exp.model}</p>
+                    </div>
+                    <span className={`home-status-badge ${s.bg}`}>
+                      <span className={`home-status-dot ${s.dot}`} />
+                      {s.label}
+                    </span>
+                    <span className="home-exp-accuracy">{exp.accuracy ? `${exp.accuracy}%` : '—'}</span>
+                    <span className="home-exp-f1">{exp.f1 ? `${exp.f1}%` : '—'}</span>
+                    <span className="home-exp-time">{exp.execution_time || exp.time || '—'}</span>
                   </div>
-                  <span className={`home-status-badge ${s.bg}`}>
-                    <span className={`home-status-dot ${s.dot}`} />
-                    {s.label}
-                  </span>
-                  <span className="home-exp-accuracy">{exp.accuracy}</span>
-                  <span className="home-exp-f1">{exp.f1}</span>
-                  <span className="home-exp-time">{exp.time}</span>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
           <div className="home-card-footer">
             <button onClick={() => onNavigate('experiments')} className="home-view-all-btn">
@@ -530,15 +554,22 @@ export default function Home({ onNavigate }) {
           <div className="home-activity-body">
             <div className="home-activity-line" />
             <div>
-              {activities.map((act, i) => (
-                <div key={i} className="home-activity-item">
-                  <ActivityIcon type={act.icon} color={act.color} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p className="home-activity-text">{act.text}</p>
-                    <p className="home-activity-time">{act.time}</p>
-                  </div>
+              {activities.length === 0 ? (
+                <div style={{ padding: '36px 16px', textAlign: 'center', color: '#64748B' }}>
+                  <p style={{ margin: 0, fontSize: '13.5px', fontWeight: 500, color: '#0F172A' }}>No activity yet</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '12.5px' }}>Actions on datasets & experiments will show here.</p>
                 </div>
-              ))}
+              ) : (
+                activities.map((act, i) => (
+                  <div key={act.id || i} className="home-activity-item">
+                    <ActivityIcon type={act.icon || act.activity_type || 'exp'} color={act.color || '#0D9488'} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p className="home-activity-text">{act.text}</p>
+                      <p className="home-activity-time">{act.time || (act.created_at ? new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently')}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
           <div className="home-card-footer" style={{ marginTop: 'auto' }}>
@@ -566,33 +597,35 @@ export default function Home({ onNavigate }) {
             </button>
           </div>
           <div>
-            {datasetVersions.map((ds, i) => {
-              return (
-                <div key={i} className="home-dataset-row">
+            {datasets.length === 0 ? (
+              <div style={{ padding: '36px 16px', textAlign: 'center', color: '#64748B' }}>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: '#0F172A' }}>No datasets uploaded yet</p>
+                <p style={{ margin: '4px 0 16px', fontSize: '13px' }}>Upload your first research dataset to track versioning and quality.</p>
+                <button onClick={() => onNavigate('datasets')} className="home-hero-primary-btn" style={{ margin: '0 auto', fontSize: '13px', padding: '6px 16px' }}>
+                  + Upload Dataset
+                </button>
+              </div>
+            ) : (
+              datasets.map((ds, i) => (
+                <div key={ds.id || i} className="home-dataset-row">
                   <div className="home-dataset-icon-wrap">
                     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><ellipse cx="8" cy="4.5" rx="5" ry="2" stroke="#0F9D8A" strokeWidth="1.4"/><path d="M3 4.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3" stroke="#0F9D8A" strokeWidth="1.4"/><path d="M3 7.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3" stroke="#0F9D8A" strokeWidth="1.4"/></svg>
                   </div>
                   <div className="home-dataset-info">
                     <p className="home-dataset-name">{ds.name}</p>
                     <div className="home-dataset-submeta">
-                      <span className="home-dataset-meta-item">{ds.rows} rows</span>
+                      <span className="home-dataset-meta-item">{ds.rows_count ?? ds.rows ?? 0} rows</span>
                       <span className="home-dataset-meta-dot">·</span>
-                      <span className="home-dataset-meta-item">{ds.size}</span>
+                      <span className="home-dataset-meta-item">{ds.size_str || ds.size || '0 MB'}</span>
                     </div>
                   </div>
                   <div className="home-dataset-right">
-                    <div className="home-dataset-versions-wrap">
-                      {Array.from({ length: ds.versions }).map((_, v) => (
-                        <div key={v} className={`home-dataset-vdot ${v === ds.versions - 1 ? 'active' : ''}`} />
-                      ))}
-                      <span className="home-dataset-vtext">V{ds.versions}</span>
-                    </div>
-                    <span className={`home-type-badge type-${ds.type}`}>{ds.type}</span>
-                    <span className="home-dataset-updated">{ds.updated}</span>
+                    <span className={`home-type-badge type-${ds.type || 'Tabular'}`}>{ds.type || 'Tabular'}</span>
+                    <span className="home-dataset-updated">{ds.current_version || ds.currentVersion || 'V1'}</span>
                   </div>
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
         </div>
 

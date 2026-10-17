@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import './Settings.css';
 
 // SVG icon components for Settings sidebar — original ResearchOS line-icon style
@@ -93,15 +94,30 @@ function SectionCard({ title, children }) {
 }
 
 export default function Settings() {
+  const { user } = useAuth();
   const [section, setSection] = useState('profile');
   const [saved, setSaved] = useState(false);
 
-  // Profile state
+  // Derive real values from Supabase user
+  const meta = user?.user_metadata ?? {};
+  const realName = meta.full_name || meta.name || user?.email?.split('@')[0] || 'Researcher';
+  const realEmail = user?.email || '';
+  const realOrg = meta.org || meta.organization || '';
+
+  // Compute initials for avatar
+  const initials = realName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0].toUpperCase())
+    .join('');
+
+  // Profile state — seeded from real user on mount
   const [profile, setProfile] = useState({
-    name: 'Alex Chen',
-    email: 'a.chen@mit.edu',
-    affiliation: 'MIT CSAIL',
-    bio: 'ML researcher specializing in biomedical NLP.',
+    name: realName,
+    email: realEmail,
+    affiliation: realOrg,
+    bio: meta.bio || '',
   });
 
   // Notification toggles
@@ -188,7 +204,7 @@ export default function Settings() {
             <>
               <SectionCard title="Personal Information">
                 <div className="settings-avatar-row">
-                  <div className="settings-avatar-circle gradient-teal">AC</div>
+                  <div className="settings-avatar-circle gradient-teal">{initials || '?'}</div>
                   <div>
                     <p className="settings-avatar-label">Profile photo</p>
                     <p className="settings-avatar-desc">Used across ResearchOS and shared workspaces</p>

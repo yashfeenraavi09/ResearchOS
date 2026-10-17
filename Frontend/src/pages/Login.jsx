@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ResearchOSLogo from '../components/ResearchOSLogo';
+import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 /* ── inline SVG icons ─────────────────────────────────────────────────────── */
@@ -117,10 +118,13 @@ const panelFeatures = [
 /* ── Component ────────────────────────────────────────────────────────────── */
 
 export default function Login({ onSuccess, onSignup, onBack }) {
+    const { signInWithEmail, signInWithGoogle, resetPassword } = useAuth();
     const [form, setForm] = useState({ email: '', password: '', remember: true });
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const [error, setError] = useState('');
+    const [resetSent, setResetSent] = useState(false);
 
     function handleChange(e) {
         const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -128,12 +132,41 @@ export default function Login({ onSuccess, onSignup, onBack }) {
         setError('');
     }
 
-    function handleSubmit(e) {
+    async function handleSubmit(e) {
         e.preventDefault();
         if (!form.email.includes('@')) { setError('Please enter a valid email address.'); return; }
         if (!form.password) { setError('Please enter your password.'); return; }
         setLoading(true);
-        setTimeout(() => { setLoading(false); onSuccess(); }, 700);
+        setError('');
+        const { error } = await signInWithEmail(form.email, form.password);
+        setLoading(false);
+        if (error) {
+            setError(error.message || 'Sign in failed. Check your credentials.');
+        } else {
+            onSuccess();
+        }
+    }
+
+    async function handleGoogle() {
+        setGoogleLoading(true);
+        setError('');
+        const { error } = await signInWithGoogle();
+        setGoogleLoading(false);
+        if (error) setError(error.message || 'Google sign in failed.');
+        // If successful, Supabase redirects to Google — onSuccess fires via AuthContext on redirect back
+    }
+
+    async function handleForgotPassword() {
+        if (!form.email.includes('@')) {
+            setError('Enter your email address above, then click "Forgot password?"');
+            return;
+        }
+        const { error } = await resetPassword(form.email);
+        if (error) {
+            setError(error.message);
+        } else {
+            setResetSent(true);
+        }
     }
 
     return (
@@ -195,13 +228,9 @@ export default function Login({ onSuccess, onSignup, onBack }) {
 
                     {/* OAuth buttons */}
                     <div className="oauth-grid">
-                        <button type="button" onClick={onSuccess} className="oauth-btn">
+                        <button type="button" onClick={handleGoogle} disabled={googleLoading} className="oauth-btn">
                             <GoogleIcon size={18} />
-                            <span>Google</span>
-                        </button>
-                        <button type="button" onClick={onSuccess} className="oauth-btn">
-                            <GitHubIcon size={18} />
-                            <span>GitHub</span>
+                            <span>{googleLoading ? 'Redirecting…' : 'Google'}</span>
                         </button>
                     </div>
 
@@ -236,7 +265,7 @@ export default function Login({ onSuccess, onSignup, onBack }) {
                         <div className="form-field">
                             <div className="field-label-row">
                                 <label className="field-label">Password</label>
-                                <button type="button" className="forgot-link">Forgot password?</button>
+                                <button type="button" className="forgot-link" onClick={handleForgotPassword}>Forgot password?</button>
                             </div>
                             <div className="field-wrap">
                                 <span className="field-prefix-icon"><LockIcon size={17} /></span>
@@ -273,8 +302,13 @@ export default function Login({ onSuccess, onSignup, onBack }) {
                             <span>Keep me signed in</span>
                         </label>
 
-                        {/* Error */}
+                        {/* Feedback messages */}
                         {error && <div className="auth-error">{error}</div>}
+                        {resetSent && (
+                            <div className="auth-success">
+                                ✓ Password reset email sent — check your inbox.
+                            </div>
+                        )}
 
                         {/* Submit */}
                         <button type="submit" disabled={loading} className="auth-submit-btn">

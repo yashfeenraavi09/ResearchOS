@@ -1,72 +1,100 @@
-import { useState } from 'react';
-import { EXPERIMENTS } from '../data/experiments';
+import { useState, useEffect } from 'react';
+import { fetchExperiments } from '../lib/api';
 import './ExperimentList.css';
 
 function MetricCell({ val }) {
   if (val === null || val === undefined) return <span className="experiment-list-metric-empty">—</span>;
-  const level = val >= 92 ? 'high' : val >= 85 ? 'med' : 'low';
-  return <span className={`experiment-list-metric-val ${level}`}>{val.toFixed(1)}%</span>;
+  const num = typeof val === 'number' ? val : parseFloat(val);
+  if (isNaN(num)) return <span className="experiment-list-metric-empty">—</span>;
+  const level = num >= 92 ? 'high' : num >= 85 ? 'med' : 'low';
+  return <span className={`experiment-list-metric-val ${level}`}>{num.toFixed(1)}%</span>;
 }
 
 function ExperimentRow({ exp, onSelect, onViewDataset }) {
+  const name = exp.name || 'Untitled Experiment';
+  const model = exp.model || 'Unknown Model';
+  const modelFamily = exp.model_family || exp.modelFamily || 'Transformer';
+  const datasetName = exp.dataset_name || exp.datasetName || exp.dataset || 'Dataset';
+  const datasetVersion = exp.dataset_version || exp.datasetVersion || 'V1';
+  const accuracy = exp.accuracy;
+  const precision = exp.precision;
+  const recall = exp.recall;
+  const f1 = exp.f1;
+  const execTime = exp.execution_time || exp.executionTime || '—';
+  const status = exp.status || 'queued';
+  const dateStr = exp.date ? exp.date.split(',')[0] : (exp.created_at ? new Date(exp.created_at).toLocaleDateString() : 'Today');
+
   return (
     <div
       onClick={onSelect}
       className="experiment-list-row"
     >
       <div style={{ minWidth: 0 }}>
-        <p className="experiment-list-cell-name">{exp.name}</p>
-        <p className="experiment-list-cell-sub">{exp.id} · {exp.project}</p>
+        <p className="experiment-list-cell-name">{name}</p>
+        <p className="experiment-list-cell-sub">{exp.id ? exp.id.slice(0, 8) : ''} · {exp.project_name || exp.project || 'Project'}</p>
       </div>
       <div style={{ minWidth: 0 }}>
-        <p className="experiment-list-cell-primary">{exp.model}</p>
-        <p className="experiment-list-cell-sub">{exp.modelFamily}</p>
+        <p className="experiment-list-cell-primary">{model}</p>
+        <p className="experiment-list-cell-sub">{modelFamily}</p>
       </div>
       <div style={{ minWidth: 0 }}>
         <button
-          onClick={e => { e.stopPropagation(); onViewDataset?.(exp.datasetId); }}
+          onClick={e => { e.stopPropagation(); onViewDataset?.(exp.dataset_id || exp.datasetId); }}
           className="experiment-list-ds-btn"
         >
-          {exp.datasetName}
+          {datasetName}
         </button>
-        <p className="experiment-list-cell-sub" style={{ fontFamily: 'monospace' }}>{exp.datasetVersion}</p>
+        <p className="experiment-list-cell-sub" style={{ fontFamily: 'monospace' }}>{datasetVersion}</p>
       </div>
-      <MetricCell val={exp.accuracy} />
-      <MetricCell val={exp.precision} />
-      <MetricCell val={exp.recall} />
-      <MetricCell val={exp.f1} />
-      <span className="experiment-list-cell-time">{exp.executionTime}</span>
-      <span className={`experiment-list-status-badge ${exp.status}`}>
-        <span className={`experiment-list-status-dot ${exp.status} ${exp.status === 'running' ? 'animate-pulse' : ''}`} />
-        {exp.status}
+      <MetricCell val={accuracy} />
+      <MetricCell val={precision} />
+      <MetricCell val={recall} />
+      <MetricCell val={f1} />
+      <span className="experiment-list-cell-time">{execTime}</span>
+      <span className={`experiment-list-status-badge ${status}`}>
+        <span className={`experiment-list-status-dot ${status} ${status === 'running' ? 'animate-pulse' : ''}`} />
+        {status}
       </span>
-      <span className="experiment-list-cell-date">{exp.date.split(',')[0]}</span>
+      <span className="experiment-list-cell-date">{dateStr}</span>
     </div>
   );
 }
 
 export default function ExperimentList({ onSelect, onNew, onViewDataset }) {
+  const [experiments, setExperiments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('date');
 
-  const filtered = EXPERIMENTS
+  useEffect(() => {
+    let mounted = true;
+    fetchExperiments().then(data => {
+      if (mounted) {
+        setExperiments(data || []);
+        setLoading(false);
+      }
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const filtered = experiments
     .filter(e => statusFilter === 'all' || e.status === statusFilter)
-    .filter(e => e.name.toLowerCase().includes(search.toLowerCase()) ||
-                 e.model.toLowerCase().includes(search.toLowerCase()) ||
-                 e.project.toLowerCase().includes(search.toLowerCase()))
+    .filter(e => (e.name || '').toLowerCase().includes(search.toLowerCase()) ||
+                 (e.model || '').toLowerCase().includes(search.toLowerCase()) ||
+                 (e.project || '').toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       if (sortBy === 'accuracy') return (b.accuracy ?? -1) - (a.accuracy ?? -1);
       if (sortBy === 'f1') return (b.f1 ?? -1) - (a.f1 ?? -1);
-      if (sortBy === 'time') return a.executionSeconds - b.executionSeconds;
       return 0;
     });
 
+  const validAccs = experiments.filter(e => e.accuracy != null && !isNaN(e.accuracy)).map(e => Number(e.accuracy));
   const stats = {
-    total: EXPERIMENTS.length,
-    running: EXPERIMENTS.filter(e => e.status === 'running').length,
-    completed: EXPERIMENTS.filter(e => e.status === 'completed').length,
-    best: Math.max(...EXPERIMENTS.filter(e => e.accuracy != null).map(e => e.accuracy)),
+    total: experiments.length,
+    running: experiments.filter(e => e.status === 'running').length,
+    completed: experiments.filter(e => e.status === 'completed').length,
+    best: validAccs.length > 0 ? `${Math.max(...validAccs).toFixed(1)}%` : '—',
   };
 
   return (
@@ -136,7 +164,17 @@ export default function ExperimentList({ onSelect, onNew, onViewDataset }) {
           ))}
         </div>
         <div className="experiment-list-table-body">
-          {filtered.map(exp => <ExperimentRow key={exp.id} exp={exp} onSelect={() => onSelect(exp.id)} onViewDataset={onViewDataset} />)}
+          {filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 16px', color: '#64748B' }}>
+              <p style={{ fontWeight: 600, color: '#0F172A', marginBottom: 4 }}>No experiments found</p>
+              <p style={{ fontSize: '13px', marginBottom: 16 }}>Configure and launch your first ML training run.</p>
+              <button onClick={onNew} className="experiment-list-new-btn" style={{ margin: '0 auto' }}>
+                + New Experiment
+              </button>
+            </div>
+          ) : (
+            filtered.map(exp => <ExperimentRow key={exp.id} exp={exp} onSelect={() => onSelect(exp.id)} onViewDataset={onViewDataset} />)
+          )}
         </div>
       </div>
     </div>
