@@ -69,13 +69,20 @@ export default function ExperimentList({ onSelect, onNew, onViewDataset }) {
 
   useEffect(() => {
     let mounted = true;
-    fetchExperiments().then(data => {
-      if (mounted) {
-        setExperiments(data || []);
-        setLoading(false);
-      }
-    });
-    return () => { mounted = false; };
+    const load = () => {
+      fetchExperiments().then(data => {
+        if (mounted) {
+          setExperiments(data || []);
+          setLoading(false);
+        }
+      });
+    };
+    load();
+    const interval = setInterval(load, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const filtered = experiments
