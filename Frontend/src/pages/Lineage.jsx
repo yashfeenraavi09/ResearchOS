@@ -280,15 +280,24 @@ export default function Lineage() {
 
   useEffect(() => {
     let mounted = true;
-    fetchLineage().then(data => {
-      if (mounted) {
-        if (data && Array.isArray(data.nodes)) {
-          setLineageData(data);
-        }
+
+    async function load() {
+      const data = await fetchLineage();
+      if (mounted && data && Array.isArray(data.nodes)) {
+        setLineageData(data);
         setLoading(false);
       }
-    });
-    return () => { mounted = false; };
+    }
+
+    load();
+
+    // Live polling every 5s to update canvas with new pipeline nodes
+    const interval = setInterval(load, 5000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const allNodes = [...(lineageData.nodes || []), ...liveItems.map(l => l.node)];
