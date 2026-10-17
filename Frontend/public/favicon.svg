@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26" fill="none">
+  <defs>
+    <linearGradient id="ros-favicon-g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0D9488" />
+      <stop offset="100%" stopColor="#22D3EE" />
+    </linearGradient>
+  </defs>
+  <path d="M 13,5 Q 10.47,12.54 5.21,18.5 Q 13,16.93 20.79,18.5 Q 15.53,12.54 13,5 Z"
+    stroke="#0D9488" strokeWidth="1.6" fill="none" />
+  <circle cx="5.21"  cy="18.5" r="2.8" fill="#0B1F3A" />
+  <circle cx="20.79" cy="18.5" r="2.2" fill="#0D9488" />
+  <circle cx="13"    cy="5"    r="2.0" fill="#22D3EE" />
+  <circle cx="13"    cy="14"   r="1.6" fill="url(#ros-favicon-g)" />
+</svg>
