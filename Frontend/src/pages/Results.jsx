@@ -107,13 +107,20 @@ export default function Results({ onViewExperiment, onViewDataset, onViewLineage
 
   useEffect(() => {
     let mounted = true;
-    fetchResults().then(data => {
-      if (mounted) {
-        setResults(data || []);
-        setLoading(false);
-      }
-    });
-    return () => { mounted = false; };
+    const load = () => {
+      fetchResults().then(data => {
+        if (mounted) {
+          setResults(data || []);
+          setLoading(false);
+        }
+      });
+    };
+    load();
+    const interval = setInterval(load, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const best = results.length > 0 ? results[0] : null;
