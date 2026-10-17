@@ -222,13 +222,27 @@ export default function Home({ onNavigate }) {
 
   useEffect(() => {
     let mounted = true;
-    fetchDashboard().then(data => {
-      if (mounted) {
+
+    async function load(showLoading = false) {
+      if (showLoading) setLoading(true);
+      const data = await fetchDashboard();
+      if (mounted && data) {
         setDashboardData(data);
         setLoading(false);
       }
-    });
-    return () => { mounted = false; };
+    }
+
+    load(true);
+
+    // Live realtime polling every 4 seconds to pick up SDK events and background runs
+    const interval = setInterval(() => {
+      load(false);
+    }, 4000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // Derive display name from Supabase user metadata or email
