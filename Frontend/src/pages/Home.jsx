@@ -336,16 +336,31 @@ export default function Home({ onNavigate }) {
         {/* Bottom status bar */}
         <div className="home-hero-statusbar">
           {[
-            { label: 'Best Accuracy', value: stats.best_accuracy || '—', spark: [89.4, 90.1, 92.7, 94.2], color: '#14B8A6' },
-            { label: 'Experiments', value: String(stats.total_experiments ?? 0), spark: [60, 65, 70, 76, 80, 86], color: '#22D3EE' },
-            { label: 'Datasets', value: String(stats.total_datasets ?? 0), spark: [18, 19, 20, 22, 24], color: '#A78BFA' },
+            {
+              label: 'Best Accuracy',
+              value: loading ? '…' : (stats.best_accuracy || '—'),
+              spark: [0.7, 0.8, 0.88, Math.min(1, parseFloat(stats.best_accuracy) / 100 || 0.5)].map(v => v * 100),
+              color: '#14B8A6',
+            },
+            {
+              label: 'Experiments',
+              value: loading ? '…' : String(stats.total_experiments ?? 0),
+              spark: [0.3, 0.5, 0.7, 1.0].map(v => Math.round(v * (stats.total_experiments || 1))),
+              color: '#22D3EE',
+            },
+            {
+              label: 'Datasets',
+              value: loading ? '…' : String(stats.total_datasets ?? 0),
+              spark: [0.2, 0.5, 0.75, 1.0].map(v => Math.round(v * (stats.total_datasets || 1))),
+              color: '#A78BFA',
+            },
           ].map((m, i) => (
             <div key={i} className="home-hero-metric-item">
               <div>
                 <div className="home-hero-metric-label">{m.label}</div>
                 <div className="home-hero-metric-value">{m.value}</div>
               </div>
-              <MiniSparkline values={m.spark} color={m.color} />
+              <MiniSparkline values={m.spark.length >= 2 ? m.spark : [0, 1]} color={m.color} />
               {i < 2 && <div className="home-hero-metric-divider" />}
             </div>
           ))}
@@ -448,19 +463,31 @@ export default function Home({ onNavigate }) {
           {[
             {
               icon: <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><ellipse cx="9" cy="5.5" rx="5.5" ry="2.2" stroke="#14B8A6" strokeWidth="1.35"/><path d="M3.5 5.5v4.5c0 1.2 2.46 2.2 5.5 2.2s5.5-1 5.5-2.2V5.5" stroke="#14B8A6" strokeWidth="1.35"/><path d="M3.5 10v3c0 1.2 2.46 2.2 5.5 2.2s5.5-1 5.5-2.2v-3" stroke="#14B8A6" strokeWidth="1.35"/></svg>,
-              label: 'Dataset Evolution', value: '4 versions', sub: 'PubMed-2024 · latest V4', accent: '#14B8A6', accentBg: '#E6F7F5', bar: [0.4, 0.6, 0.75, 1.0],
+              label: 'Dataset Evolution',
+              value: loading ? '…' : `${stats.total_datasets} ${stats.total_datasets === 1 ? 'dataset' : 'datasets'}`,
+              sub: stats.total_datasets > 0 ? 'Track versions and quality' : 'No datasets yet',
+              accent: '#14B8A6', accentBg: '#E6F7F5', bar: [0.25, 0.45, 0.7, Math.min(1, (stats.total_datasets || 0.1) / 5)],
             },
             {
               icon: <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><path d="M7 2.5v6L4 15h10l-3-6.5V2.5" stroke="#22D3EE" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round"/><path d="M7 2.5h4" stroke="#22D3EE" strokeWidth="1.35" strokeLinecap="round"/></svg>,
-              label: 'Experiment Performance', value: '94.2%', sub: 'Peak accuracy this cycle', accent: '#22D3EE', accentBg: '#ECFEFF', bar: [0.6, 0.7, 0.82, 0.94],
+              label: 'Experiment Performance',
+              value: loading ? '…' : (stats.best_accuracy && stats.best_accuracy !== '—' ? stats.best_accuracy : `${stats.total_experiments} runs`),
+              sub: stats.total_experiments > 0 ? `${stats.total_experiments} experiment${stats.total_experiments === 1 ? '' : 's'} total` : 'No experiments yet',
+              accent: '#22D3EE', accentBg: '#ECFEFF', bar: [0.3, 0.5, 0.65, Math.min(1, (stats.total_experiments || 0.1) / 10)],
             },
             {
               icon: <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><circle cx="4" cy="9" r="2.5" stroke="#3B82F6" strokeWidth="1.35"/><circle cx="9" cy="4" r="2.5" stroke="#3B82F6" strokeWidth="1.35"/><circle cx="14" cy="9" r="2.5" stroke="#3B82F6" strokeWidth="1.35"/><path d="M6.5 9h1M11 4.8L12.5 7.8" stroke="#3B82F6" strokeWidth="1.2"/></svg>,
-              label: 'Lineage Status', value: '142 nodes', sub: '+8 nodes since last sync', accent: '#3B82F6', accentBg: '#DBEAFE', bar: [0.5, 0.65, 0.8, 0.92],
+              label: 'Active Projects',
+              value: loading ? '…' : `${stats.total_projects} ${stats.total_projects === 1 ? 'project' : 'projects'}`,
+              sub: stats.total_projects > 0 ? 'Research workspaces' : 'Create your first project',
+              accent: '#3B82F6', accentBg: '#DBEAFE', bar: [0.2, 0.4, 0.6, Math.min(1, (stats.total_projects || 0.1) / 5)],
             },
             {
               icon: <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><circle cx="7" cy="6" r="3" stroke="#22D3EE" strokeWidth="1.35"/><path d="M2 15.5c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="#22D3EE" strokeWidth="1.35" strokeLinecap="round"/><circle cx="13.5" cy="6.5" r="2" stroke="#22D3EE" strokeWidth="1.2"/><path d="M15.5 14c0-1.93-1.34-3.5-3-3.5" stroke="#22D3EE" strokeWidth="1.2" strokeLinecap="round"/></svg>,
-              label: 'Research Activity', value: '4 active', sub: 'Sara, Rifa, Aman, Alex', accent: '#22D3EE', accentBg: '#ECFEFF', bar: [0.3, 0.55, 0.7, 0.85],
+              label: 'Running Experiments',
+              value: loading ? '…' : `${stats.active_experiments} active`,
+              sub: stats.active_experiments > 0 ? 'Currently training' : 'No active runs',
+              accent: '#22D3EE', accentBg: '#ECFEFF', bar: [0.15, 0.35, 0.55, Math.min(1, (stats.active_experiments || 0.05) / 3)],
             },
           ].map((item, i) => (
             <div key={i} className="home-glance-card" style={{ backgroundColor: item.accentBg + '66' }}>

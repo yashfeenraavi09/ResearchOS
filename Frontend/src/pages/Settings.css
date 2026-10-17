@@ -75,7 +75,8 @@
 }
 
 .settings-content-inner {
-  max-width: 640px;
+  max-width: 100%;
+  width: 100%;
 }
 
 .settings-header {
