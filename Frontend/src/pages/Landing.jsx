@@ -277,25 +277,17 @@ function HeroGeometricGrid() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   CUSTOM SCIENTIFIC PRECISION RETICLE CURSOR
+   MINIMALIST PRECISION DOT CURSOR (Linear / Figma Style)
+   Ultra-crisp 6px teal dot with zero glow, 100% surgical & responsive
 ───────────────────────────────────────────────────────────────────────────── */
 function CustomCursor() {
     const [pos, setPos] = useState({ x: -100, y: -100 });
-    const [trailingPos, setTrailingPos] = useState({ x: -100, y: -100 });
     const [isHovering, setIsHovering] = useState(false);
     const [isClicking, setIsClicking] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        let reqId;
-        let targetX = -100;
-        let targetY = -100;
-        let curX = -100;
-        let curY = -100;
-
         const onMouseMove = (e) => {
-            targetX = e.clientX;
-            targetY = e.clientY;
             setPos({ x: e.clientX, y: e.clientY });
             if (!isVisible) setIsVisible(true);
 
@@ -308,21 +300,12 @@ function CustomCursor() {
         const onMouseUp = () => setIsClicking(false);
         const onMouseLeave = () => setIsVisible(false);
 
-        const loop = () => {
-            curX += (targetX - curX) * 0.22;
-            curY += (targetY - curY) * 0.22;
-            setTrailingPos({ x: curX, y: curY });
-            reqId = requestAnimationFrame(loop);
-        };
-        reqId = requestAnimationFrame(loop);
-
         window.addEventListener('mousemove', onMouseMove, { passive: true });
         window.addEventListener('mousedown', onMouseDown);
         window.addEventListener('mouseup', onMouseUp);
         document.addEventListener('mouseleave', onMouseLeave);
 
         return () => {
-            cancelAnimationFrame(reqId);
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mousedown', onMouseDown);
             window.removeEventListener('mouseup', onMouseUp);
@@ -333,21 +316,13 @@ function CustomCursor() {
     if (!isVisible) return null;
 
     return (
-        <div className="site-custom-cursor-root" aria-hidden="true">
-            <div
-                className={`custom-cursor-dot ${isClicking ? 'dot-clicking' : ''}`}
-                style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0) scale(${isClicking ? 0.65 : 1})` }}
-            />
-            <div
-                className={`custom-cursor-ring ${isHovering ? 'ring-hovering' : ''} ${isClicking ? 'ring-clicking' : ''}`}
-                style={{ transform: `translate3d(${trailingPos.x}px, ${trailingPos.y}px, 0) scale(${isClicking ? 0.85 : 1})` }}
-            >
-                <span className="reticle-tick tick-top" />
-                <span className="reticle-tick tick-bottom" />
-                <span className="reticle-tick tick-left" />
-                <span className="reticle-tick tick-right" />
-            </div>
-        </div>
+        <div
+            className={`precision-cursor-dot ${isHovering ? 'dot-hover' : ''} ${isClicking ? 'dot-click' : ''}`}
+            style={{
+                transform: `translate3d(${pos.x}px, ${pos.y}px, 0) scale(${isClicking ? 0.75 : 1})`
+            }}
+            aria-hidden="true"
+        />
     );
 }
 
@@ -1008,7 +983,7 @@ export default function Landing({ onGetStarted, onLogin }) {
                 <div className="nav-container">
                     <div className="nav-brand" onClick={() => scrollTo('hero')}>
                         <ResearchOSLogo size={32} showWordmark={true} textColor="#0F172A" />
-                        <span className="brand-version-pill">v1.4 Beta</span>
+                       
                     </div>
                     <div className="nav-links">
                         {navLinks.map((l) => (
@@ -1052,7 +1027,7 @@ export default function Landing({ onGetStarted, onLogin }) {
                 <div className="hero-content">
                     <div className="hero-pill-badge">
                         <SparkleIcon size={14} color="#0D9488" />
-                        <span>The Open Operating System for Machine Learning Research</span>
+                        <span>The Open Operating System Research</span>
                         <span className="badge-sep">·</span>
                         <span className="badge-highlight">Deterministic Lineage</span>
                     </div>
@@ -1102,19 +1077,36 @@ export default function Landing({ onGetStarted, onLogin }) {
                 </div>
             </section>
 
-            {/* ── LIVE RESEARCH ACTIVITY TICKER ──────────────────────────── */}
+            {/* ── LIVE RESEARCH ACTIVITY TICKER (MARQUEE RIBBON) ───────── */}
             <div className="live-ticker-strip">
                 <div className="ticker-label">
                     <span className="ticker-pulse-dot" />
                     <span>LIVE RESEARCH ACTIVITY</span>
                 </div>
-                <div className="ticker-items-carousel">
-                    {liveTickerItems.map((item, idx) => (
-                        <div key={idx} className="ticker-card">
-                            <span className="ticker-badge font-mono">{item.badge}</span>
-                            <span className="ticker-text">{item.text}</span>
-                        </div>
-                    ))}
+                <div className="ticker-marquee-wrapper">
+                    <div className="ticker-marquee-track">
+                        {/* Primary loop */}
+                        {liveTickerItems.map((item, idx) => (
+                            <div key={`m1-${idx}`} className="ticker-card">
+                                <span className="ticker-badge font-mono">{item.badge}</span>
+                                <span className="ticker-text">{item.text}</span>
+                            </div>
+                        ))}
+                        {/* Loop clone 1 */}
+                        {liveTickerItems.map((item, idx) => (
+                            <div key={`m2-${idx}`} className="ticker-card">
+                                <span className="ticker-badge font-mono">{item.badge}</span>
+                                <span className="ticker-text">{item.text}</span>
+                            </div>
+                        ))}
+                        {/* Loop clone 2 */}
+                        {liveTickerItems.map((item, idx) => (
+                            <div key={`m3-${idx}`} className="ticker-card">
+                                <span className="ticker-badge font-mono">{item.badge}</span>
+                                <span className="ticker-text">{item.text}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 

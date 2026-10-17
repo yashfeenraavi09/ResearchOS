@@ -432,35 +432,36 @@
     .feature-ribbon-item { width: 100%; }
 }
 
-/* ─── LIVE RESEARCH ACTIVITY STRIP ───────────────────────────────────────── */
+/* ─── LIVE RESEARCH ACTIVITY STRIP (MARQUEE RIBBON) ─────────────────────── */
 .live-ticker-strip {
     background: #FFFFFF;
     border-top: 1px solid #E2E8F0;
     border-bottom: 1px solid #E2E8F0;
-    padding: 0.75rem 1.5rem;
+    height: 3.4rem;
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    overflow-x: auto;
-    scrollbar-width: none;
+    overflow: hidden;
     position: relative;
     z-index: 2;
+    padding: 0;
 }
-
-.live-ticker-strip::-webkit-scrollbar { display: none; }
 
 .ticker-label {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.55rem;
     font-size: 0.68rem;
     font-weight: 800;
     letter-spacing: 0.08em;
     color: #0D9488;
     white-space: nowrap;
     border-right: 1px solid #E2E8F0;
-    padding-right: 1.25rem;
+    padding: 0 1.5rem;
+    background: #FFFFFF;
+    height: 100%;
     flex-shrink: 0;
+    z-index: 10;
+    box-shadow: 8px 0 16px rgba(255, 255, 255, 0.95);
 }
 
 .ticker-pulse-dot {
@@ -471,19 +472,58 @@
     animation: pulseDot 1.5s infinite;
 }
 
-.ticker-items-carousel {
+.ticker-marquee-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    mask-image: linear-gradient(to right, transparent, black 2rem, black calc(100% - 2rem), transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 2rem, black calc(100% - 2rem), transparent);
+}
+
+.ticker-marquee-track {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
     white-space: nowrap;
+    width: max-content;
+    animation: marqueeRibbonScroll 26s linear infinite;
+    will-change: transform;
+}
+
+.ticker-marquee-track:hover {
+    animation-play-state: paused;
+}
+
+@keyframes marqueeRibbonScroll {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+    100% {
+        transform: translate3d(-33.333%, 0, 0);
+    }
 }
 
 .ticker-card {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.78rem;
-    color: #475569;
+    gap: 0.55rem;
+    font-size: 0.8rem;
+    color: #334155;
+    flex-shrink: 0;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+}
+
+.ticker-card:hover {
+    border-color: #0D9488;
+    background: #F0FDFA;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12);
 }
 
 .ticker-badge {
@@ -494,6 +534,10 @@
     padding: 0.15rem 0.5rem;
     border-radius: 4px;
     border: 1px solid #CCFBF1;
+}
+
+.ticker-text {
+    font-weight: 500;
 }
 
 /* ─── SECTION COMMON ─────────────────────────────────────────────────────── */
@@ -1847,7 +1891,7 @@
 .text-teal { color: #0D9488; }
 .text-green { color: #059669; }
 
-/* ─── SITE-WIDE CUSTOM RETICLE CURSOR ─────────────────────────────────── */
+/* ─── MINIMALIST PRECISION DOT CURSOR (Linear / Figma style) ──────────── */
 @media (pointer: fine) {
     body,
     .landing-light-container,
@@ -1856,117 +1900,36 @@
     }
 }
 
-.site-custom-cursor-root {
+.precision-cursor-dot {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 999999;
-}
-
-.custom-cursor-dot {
-    position: fixed;
-    top: -4px;
-    left: -4px;
-    width: 8px;
-    height: 8px;
-    background: #0D9488;
-    border-radius: 50%;
-    pointer-events: none;
-    box-shadow: 0 0 10px rgba(13, 148, 136, 0.9), 0 0 20px rgba(45, 212, 191, 0.6);
-    transition: transform 0.04s linear;
-    will-change: transform;
-    z-index: 1000000;
-}
-
-.custom-cursor-dot.dot-clicking {
-    background: #0284C7;
-}
-
-.custom-cursor-ring {
-    position: fixed;
-    top: -18px;
-    left: -18px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1.5px solid rgba(13, 148, 136, 0.7);
-    background: rgba(13, 148, 136, 0.04);
-    backdrop-filter: blur(1px);
-    pointer-events: none;
-    transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
-                height 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
-                border-color 0.2s ease, 
-                background 0.2s ease,
-                box-shadow 0.2s ease;
-    will-change: transform, width, height;
-    z-index: 999999;
-    box-shadow: 0 0 16px rgba(13, 148, 136, 0.18);
-}
-
-.custom-cursor-ring.ring-hovering {
-    top: -24px;
-    left: -24px;
-    width: 48px;
-    height: 48px;
-    border-color: #0284C7;
-    background: rgba(2, 132, 199, 0.1);
-    box-shadow: 0 0 24px rgba(2, 132, 199, 0.35);
-}
-
-.custom-cursor-ring.ring-clicking {
-    top: -14px;
-    left: -14px;
-    width: 28px;
-    height: 28px;
-    border-color: #6366F1;
-    background: rgba(99, 102, 241, 0.25);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
-}
-
-/* Precision scientific reticle ticks */
-.reticle-tick {
-    position: absolute;
-    background: rgba(13, 148, 136, 0.75);
-    transition: all 0.2s ease;
-}
-
-.tick-top {
     top: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 1.5px;
-    height: 4px;
-}
-
-.tick-bottom {
-    bottom: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 1.5px;
-    height: 4px;
-}
-
-.tick-left {
     left: -5px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 1.5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #0D9488;
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    pointer-events: none;
+    z-index: 999999;
+    will-change: transform;
+    transition: width 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+                height 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+                top 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+                left 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+                background-color 0.15s ease;
 }
 
-.tick-right {
-    right: -5px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 1.5px;
+.precision-cursor-dot.dot-hover {
+    top: -7px;
+    left: -7px;
+    width: 14px;
+    height: 14px;
+    background-color: #0F766E;
+    border: 1.5px solid #FFFFFF;
 }
 
-.custom-cursor-ring.ring-hovering .reticle-tick {
-    background: #0284C7;
+.precision-cursor-dot.dot-click {
+    background-color: #042F2E;
 }
 
 /* ─── LIVELY ANIMATED ARROWS & CONNECTOR LINES ───────────────────────── */
