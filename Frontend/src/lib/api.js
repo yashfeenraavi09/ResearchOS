@@ -109,3 +109,82 @@ export async function fetchTracking() {
     const data = await apiRequest('/api/tracking');
     return Array.isArray(data) ? data : [];
 }
+
+export async function uploadDatasetFile(formData) {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers = {};
+        if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+        const res = await fetch(`${API_BASE_URL}/api/datasets/upload`, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || 'Upload failed');
+        }
+        return await res.json();
+    } catch (err) {
+        console.error('[API] Failed to upload dataset file:', err);
+        throw err;
+    }
+}
+
+export async function uploadNewVersion(datasetId, formData) {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers = {};
+        if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+        const res = await fetch(`${API_BASE_URL}/api/datasets/${datasetId}/versions`, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || 'Version upload failed');
+        }
+        return await res.json();
+    } catch (err) {
+        console.error('[API] Failed to upload new version:', err);
+        throw err;
+    }
+}
+
+export async function compareDatasetVersions(datasetId, baseVersion, targetVersion) {
+    const params = new URLSearchParams();
+    if (baseVersion) params.append('base', baseVersion);
+    if (targetVersion) params.append('target', targetVersion);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return await apiRequest(`/api/datasets/${datasetId}/compare${queryString}`);
+}
+
+export async function syncTrackingBatch(payload) {
+    return await apiRequest('/api/tracking/sync', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function toggleTrackingSession(sessionId, status) {
+    return await apiRequest(`/api/tracking/session/toggle?session_id=${sessionId}&status=${status}`, {
+        method: 'POST',
+    });
+}
+
+export async function fetchSettings() {
+    return await apiRequest('/api/settings');
+}
+
+export async function saveSettings(payload) {
+    return await apiRequest('/api/settings', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
