@@ -110,13 +110,20 @@ export default function ProjectsList({ onOpen, onCreate }) {
 
   useEffect(() => {
     let mounted = true;
-    fetchProjects().then(data => {
-      if (mounted) {
-        setProjects(data || []);
-        setLoading(false);
-      }
-    });
-    return () => { mounted = false; };
+    const load = () => {
+      fetchProjects().then(data => {
+        if (mounted) {
+          setProjects(data || []);
+          setLoading(false);
+        }
+      });
+    };
+    load();
+    const interval = setInterval(load, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const filtered = projects.filter(p =>
