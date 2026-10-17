@@ -76,13 +76,20 @@ export default function DatasetList({ onSelect, onUpload }) {
 
   useEffect(() => {
     let mounted = true;
-    fetchDatasets().then(data => {
-      if (mounted) {
-        setDatasets(data || []);
-        setLoading(false);
-      }
-    });
-    return () => { mounted = false; };
+    const load = () => {
+      fetchDatasets().then(data => {
+        if (mounted) {
+          setDatasets(data || []);
+          setLoading(false);
+        }
+      });
+    };
+    load();
+    const interval = setInterval(load, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const filtered = datasets

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchDataset } from '../lib/api';
+import { fetchDataset, compareDatasetVersions } from '../lib/api';
 import './VersionComparison.css';
 
 function fmt(n) {
@@ -24,6 +24,7 @@ export default function VersionComparison({ datasetId, onBack }) {
   const [loading, setLoading] = useState(true);
   const [leftIdx, setLeftIdx] = useState(0);
   const [rightIdx, setRightIdx] = useState(0);
+  const [backendDiff, setBackendDiff] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -59,6 +60,26 @@ export default function VersionComparison({ datasetId, onBack }) {
     if (datasetId) load();
   }, [datasetId]);
 
+  // Fetch live comparison diff and PCA drift whenever selected versions change
+  useEffect(() => {
+    async function fetchDiff() {
+      if (!ds?.versions || ds.versions.length < 2) return;
+      const leftVer = ds.versions[leftIdx]?.version;
+      const rightVer = ds.versions[rightIdx]?.version;
+      if (!leftVer || !rightVer) return;
+
+      try {
+        const res = await compareDatasetVersions(datasetId, leftVer, rightVer);
+        if (res) {
+          setBackendDiff(res);
+        }
+      } catch (err) {
+        console.warn('Could not fetch backend comparison', err);
+      }
+    }
+    if (datasetId && ds) fetchDiff();
+  }, [datasetId, ds, leftIdx, rightIdx]);
+
   if (loading) {
     return (
       <div className="version-comp-container" style={{ padding: '60px 0', textAlign: 'center', color: '#6B7C93' }}>
@@ -79,16 +100,17 @@ export default function VersionComparison({ datasetId, onBack }) {
   const left = ds.versions[leftIdx] || ds.versions[0] || {};
   const right = ds.versions[rightIdx] || ds.versions[ds.versions.length - 1] || {};
 
-  const rowDiff = (right.rows || 0) - (left.rows || 0);
-  const colDiff = (right.columns || 0) - (left.columns || 0);
-  const qualityDiff = (right.qualityScore || 0) - (left.qualityScore || 0);
-  const missingDiff = (right.missingValues || 0) - (left.missingValues || 0);
-  const dupDiff = (right.duplicates || 0) - (left.duplicates || 0);
+  const rowDiff = backendDiff?.row_diff ?? ((right.rows || 0) - (left.rows || 0));
+  const colDiff = backendDiff?.col_diff ?? ((right.columns || 0) - (left.columns || 0));
+  const qualityDiff = backendDiff?.quality_diff ?? ((right.qualityScore || 0) - (left.qualityScore || 0));
+  const missingDiff = backendDiff?.missing_diff ?? ((right.missingValues || 0) - (left.missingValues || 0));
+  const dupDiff = backendDiff?.dup_diff ?? ((right.duplicates || 0) - (left.duplicates || 0));
 
-  const addedCols = colDiff > 0 ? Array.from({ length: colDiff }, (_, i) => `new_col_${i + 1}`) : [];
-  const removedCols = [];
+  const addedCols = backendDiff?.added_columns ?? (colDiff > 0 ? Array.from({ length: colDiff }, (_, i) => `new_col_${i + 1}`) : []);
+  const removedCols = backendDiff?.removed_columns ?? [];
 
-  const maxShift = ds.pcaDrift && ds.pcaDrift.length > 0 ? Math.max(...ds.pcaDrift.map(p => p.shift)) : 0;
+  const pcaDriftList = backendDiff?.pca_drift || ds.pcaDrift || [];
+  const maxShift = pcaDriftList.length > 0 ? Math.max(...pcaDriftList.map(p => p.shift || 0)) : 0;
 
   return (
     <div className="version-comp-container">
@@ -238,17 +260,17 @@ export default function VersionComparison({ datasetId, onBack }) {
         <div className="version-comp-card card-shadow">
           <div className="version-comp-card-hdr">
             <h2 className="version-comp-sec-title">PCA Drift Analysis</h2>
-            {ds.pcaDrift && ds.pcaDrift.length > 0 && (
+            {pcaDriftList && pcaDriftList.length > 0 && (
               <span className={`version-comp-drift-pill ${maxShift > 0.3 ? 'warn' : 'ok'}`}>
                 {maxShift > 0.3 ? '⚠ Drift detected' : '✓ Stable'}
               </span>
             )}
           </div>
-          {!ds.pcaDrift || ds.pcaDrift.length === 0 ? (
+          {!pcaDriftList || pcaDriftList.length === 0 ? (
             <p className="version-comp-empty-text">PCA drift analysis requires at least 2 versions with sufficient rows.</p>
           ) : (
             <div className="version-comp-drift-list">
-              {ds.pcaDrift.map(pc => {
+              {pcaDriftList.map(pc => {
                 const color = pc.shift > 0.3 ? '#EF4444' : pc.shift > 0.15 ? '#F59E0B' : '#10B981';
                 return (
                   <div key={pc.component} className="version-comp-drift-row">

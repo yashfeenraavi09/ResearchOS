@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { createDataset } from '../lib/api';
+import { createDataset, uploadDatasetFile } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import './DatasetUpload.css';
 
@@ -14,47 +14,62 @@ export default function DatasetUpload({ onBack, onSuccess }) {
   const [step, setStep] = useState('upload');
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState(null);
+  const [rawFile, setRawFile] = useState(null);
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
-  const [type, setType] = useState('NLP');
+  const [type, setType] = useState('Tabular');
   const [versionNote, setVersionNote] = useState('Initial upload');
   const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const fileRef = useRef(null);
 
   function handleFileDrop(e) {
     e.preventDefault();
     setDragOver(false);
     const f = e.dataTransfer.files[0];
-    if (f) simulateFileRead(f.name, f.size);
+    if (f) processFile(f);
   }
 
   function handleFileSelect(e) {
     const f = e.target.files?.[0];
-    if (f) simulateFileRead(f.name, f.size);
+    if (f) processFile(f);
   }
 
-  function simulateFileRead(fileName, fileSize) {
-    const sizeStr = fileSize > 1_000_000 ? `${(fileSize / 1_000_000).toFixed(1)} MB` : `${(fileSize / 1_000).toFixed(0)} KB`;
-    setFile({ name: fileName, size: sizeStr, rows: Math.floor(Math.random() * 900000) + 100000, cols: Math.floor(Math.random() * 20) + 5 });
-    setName(fileName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+  function processFile(f) {
+    setRawFile(f);
+    const sizeStr = f.size > 1_000_000 ? `${(f.size / 1_000_000).toFixed(1)} MB` : `${(f.size / 1_000).toFixed(0)} KB`;
+    setFile({ name: f.name, size: sizeStr });
+    setName(f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
   }
 
   async function handleSave() {
     setSaving(true);
+    setErrorMsg('');
     try {
-      await createDataset({
-        name: name.trim(),
-        description: desc.trim(),
-        type,
-        rows_count: file?.rows || 1000,
-        columns_count: file?.cols || 10,
-        size_str: file?.size || '1.0 MB',
-        tags: [type],
-      });
+      if (rawFile) {
+        // Send multipart form-data to backend
+        const formData = new FormData();
+        formData.append('file', rawFile);
+        formData.append('name', name.trim());
+        formData.append('description', desc.trim());
+        formData.append('dataset_type', type);
+        formData.append('version_label', 'V1');
+        formData.append('version_note', versionNote.trim());
+
+        await uploadDatasetFile(formData);
+      } else {
+        await createDataset({
+          name: name.trim(),
+          description: desc.trim(),
+          type,
+          size_str: file?.size || '1.0 MB',
+          tags: [type],
+        });
+      }
       onSuccess();
     } catch (err) {
-      console.error('Failed to create dataset', err);
-      onSuccess();
+      console.error('Failed to upload/create dataset', err);
+      setErrorMsg(err.message || 'Failed to upload dataset.');
     } finally {
       setSaving(false);
     }
