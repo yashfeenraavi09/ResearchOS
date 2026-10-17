@@ -5,6 +5,19 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
+/* ─── CUSTOM THEME TEXT SELECTION (LIGHT GREEN / TEAL) ───────────────────── */
+::selection,
+*::selection {
+    background-color: #CCFBF1;
+    color: #056c63;
+}
+
+::-moz-selection,
+*::-moz-selection {
+    background-color: #CCFBF1;
+    color: #056c63;
+}
+
 /* ─── BASE CONTAINER & SMOOTH SCROLL ──────────────────────────────────────── */
 .landing-light-container {
     height: 100vh;

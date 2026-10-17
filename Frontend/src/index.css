@@ -5,6 +5,19 @@
   box-sizing: border-box;
 }
 
+/* Custom Global Text Selection (Theme Matching Light Green / Teal) */
+::selection,
+*::selection {
+  background-color: #CCFBF1;
+  color: #0F766E;
+}
+
+::-moz-selection,
+*::-moz-selection {
+  background-color: #CCFBF1;
+  color: #0F766E;
+}
+
 html, body {
   margin: 0;
   padding: 0;
