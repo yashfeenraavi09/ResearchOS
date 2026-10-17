@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchTracking } from '../lib/api';
+import { fetchTracking, syncTrackingBatch, toggleTrackingSession } from '../lib/api';
 import './Tracking.css';
 
 const TRACKED_EVENT_ICONS = [
@@ -37,32 +37,74 @@ export default function Tracking() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadSession() {
-      try {
-        const sessions = await fetchTracking();
-        if (sessions && sessions.length > 0) {
-          setSession(sessions[0]);
+  async function loadSession() {
+    try {
+      const sessions = await fetchTracking();
+      if (sessions && sessions.length > 0) {
+        setSession(sessions[0]);
+        if (sessions[0].status === 'paused') {
+          setTracking(false);
         }
-      } catch (err) {
-        console.error('Failed to load tracking session', err);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      console.error('Failed to load tracking session', err);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     loadSession();
+
+    // Live auto-polling every 3.5s to display events sent by Python SDK in real time
+    const interval = setInterval(() => {
+      loadSession();
+    }, 3500);
+
+    return () => clearInterval(interval);
   }, []);
 
   function toggle(id) {
     setConsent(prev => prev.map(c => c.id === id && !c.required ? { ...c, checked: !c.checked } : c));
   }
 
+  async function handleToggleStatus() {
+    const nextState = !tracking;
+    setTracking(nextState);
+    if (session?.session_token) {
+      try {
+        await toggleTrackingSession(session.session_token, nextState ? 'active' : 'paused');
+      } catch (e) {
+        console.warn('Could not toggle session status', e);
+      }
+    }
+  }
+
   async function handleSync() {
     setSyncing(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setSyncing(false);
-    setSynced(true);
-    setTimeout(() => setSynced(false), 4000);
+    try {
+      const consentObj = {
+        upload_dataset_file: consent.find(c => c.id === 'datasets')?.checked || false,
+        log_metadata: consent.find(c => c.id === 'metadata')?.checked || true,
+        sync_lineage: consent.find(c => c.id === 'lineage')?.checked || true,
+        log_version_hashes: consent.find(c => c.id === 'versions')?.checked || true,
+      };
+
+      await syncTrackingBatch({
+        session_id: session?.session_token || `ros-sdk-web-${Date.now().toString().slice(-6)}`,
+        consent: consentObj,
+        datasets: [],
+        experiments: [],
+      });
+
+      await loadSession();
+      setSynced(true);
+      setTimeout(() => setSynced(false), 4000);
+    } catch (err) {
+      console.error('Failed to sync tracking batch', err);
+    } finally {
+      setSyncing(false);
+    }
   }
 
   function handleCancel() {
@@ -87,7 +129,7 @@ export default function Tracking() {
             Tracking {tracking ? 'Active' : 'Paused'}
           </div>
           <button
-            onClick={() => setTracking(t => !t)}
+            onClick={handleToggleStatus}
             className="tracking-btn-pause"
           >
             {tracking ? 'Pause' : 'Resume'}
