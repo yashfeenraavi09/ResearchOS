@@ -38,18 +38,52 @@ export default function DatasetUpload({ onBack, onSuccess }) {
   function processFile(f) {
     setRawFile(f);
     const sizeStr = f.size > 1_000_000 ? `${(f.size / 1_000_000).toFixed(1)} MB` : `${(f.size / 1_000).toFixed(0)} KB`;
+    const ext = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
     
-    // Base file state
+    // Auto-select type based on extension
+    let detectedType = 'Tabular';
+    if (['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif', '.bmp', '.tiff'].includes(ext)) {
+      detectedType = 'Vision';
+    } else if (['.txt', '.log', '.md', '.corpus', '.rtf', '.jsonl'].includes(ext)) {
+      detectedType = 'NLP';
+    } else if (['.graphml', '.gml', '.edges'].includes(ext)) {
+      detectedType = 'Graph';
+    }
+    setType(detectedType);
+
+    // Initial file state
     setFile({
       name: f.name,
       size: sizeStr,
       rows: null,
       cols: null,
+      format: ext.replace('.', '').toUpperCase() || 'FILE',
     });
     setName(f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
 
-    // Client-side quick row and column inspection for CSV, TSV, and JSON datasets
-    if (f.name.endsWith('.csv') || f.name.endsWith('.tsv') || f.type.includes('csv') || f.type.includes('text')) {
+    // 1. Image Files (Vision datasets)
+    if (['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif', '.bmp'].includes(ext) || f.type.startsWith('image/')) {
+      try {
+        const img = new Image();
+        const objUrl = URL.createObjectURL(f);
+        img.onload = () => {
+          setFile(prev => prev ? ({
+            ...prev,
+            rows: `${img.naturalHeight.toLocaleString()} px (Height)`,
+            cols: `${img.naturalWidth.toLocaleString()} px (Width)`,
+          }) : null);
+          URL.revokeObjectURL(objUrl);
+        };
+        img.onerror = () => URL.revokeObjectURL(objUrl);
+        img.src = objUrl;
+        return;
+      } catch (err) {
+        console.warn('Image dimensions extraction error', err);
+      }
+    }
+
+    // 2. CSV / TSV / PSV Tabular files
+    if (['.csv', '.tsv', '.tab', '.psv'].includes(ext) || f.type.includes('csv')) {
       const reader = new FileReader();
       reader.onload = (evt) => {
         try {
@@ -58,7 +92,11 @@ export default function DatasetUpload({ onBack, onSuccess }) {
             const lines = content.trim().split(/\r?\n/).filter(line => line.trim().length > 0);
             if (lines.length > 0) {
               const rowCount = Math.max(0, lines.length - 1); // exclude header row
-              const delimiter = f.name.endsWith('.tsv') ? '\t' : ',';
+              let delimiter = ',';
+              if (ext === '.tsv' || ext === '.tab') delimiter = '\t';
+              else if (ext === '.psv') delimiter = '|';
+              else if (lines[0].includes(';') && !lines[0].includes(',')) delimiter = ';';
+              
               const colCount = lines[0].split(delimiter).length;
               setFile(prev => prev ? ({
                 ...prev,
@@ -71,17 +109,20 @@ export default function DatasetUpload({ onBack, onSuccess }) {
           console.warn('Could not inspect CSV client-side', err);
         }
       };
-      // Read first 2MB for fast row inspection
       reader.readAsText(f.slice(0, 2 * 1024 * 1024));
-    } else if (f.name.endsWith('.json') || f.name.endsWith('.jsonl')) {
+      return;
+    }
+
+    // 3. JSON / JSONL / NDJSON
+    if (['.json', '.jsonl', '.ndjson'].includes(ext) || f.type.includes('json')) {
       const reader = new FileReader();
       reader.onload = (evt) => {
         try {
           const content = evt.target?.result;
           if (typeof content === 'string') {
-            if (f.name.endsWith('.jsonl')) {
+            if (ext === '.jsonl' || ext === '.ndjson') {
               const lines = content.trim().split(/\r?\n/).filter(l => l.trim().length > 0);
-              setFile(prev => prev ? ({ ...prev, rows: lines.length, cols: 'Dynamic' }) : null);
+              setFile(prev => prev ? ({ ...prev, rows: lines.length, cols: 'Dynamic JSON' }) : null);
             } else {
               const data = JSON.parse(content);
               if (Array.isArray(data)) {
@@ -89,6 +130,12 @@ export default function DatasetUpload({ onBack, onSuccess }) {
                   ...prev,
                   rows: data.length,
                   cols: data[0] && typeof data[0] === 'object' ? Object.keys(data[0]).length : 1,
+                }) : null);
+              } else if (typeof data === 'object' && data !== null) {
+                setFile(prev => prev ? ({
+                  ...prev,
+                  rows: Object.keys(data).length,
+                  cols: 'Key-Value Map',
                 }) : null);
               }
             }
@@ -98,7 +145,65 @@ export default function DatasetUpload({ onBack, onSuccess }) {
         }
       };
       reader.readAsText(f.slice(0, 2 * 1024 * 1024));
+      return;
     }
+
+    // 4. Plain Text / NLP Corpora
+    if (['.txt', '.log', '.md', '.corpus', '.rtf'].includes(ext) || f.type.startsWith('text/')) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const content = evt.target?.result;
+          if (typeof content === 'string') {
+            const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
+            setFile(prev => prev ? ({
+              ...prev,
+              rows: `${lines.length.toLocaleString()} lines / documents`,
+              cols: '1 (Text Column)',
+            }) : null);
+          }
+        } catch (_) {}
+      };
+      reader.readAsText(f.slice(0, 2 * 1024 * 1024));
+      return;
+    }
+
+    // 5. Parquet / Arrow Columnar Data
+    if (['.parquet', '.pq', '.arrow'].includes(ext)) {
+      setFile(prev => prev ? ({
+        ...prev,
+        rows: 'Columnar Parquet Records',
+        cols: 'Schema-indexed',
+      }) : null);
+      return;
+    }
+
+    // 6. Excel Spreadsheets
+    if (['.xlsx', '.xls', '.xlsm'].includes(ext)) {
+      setFile(prev => prev ? ({
+        ...prev,
+        rows: 'Worksheet Data Rows',
+        cols: 'Multi-column Table',
+      }) : null);
+      return;
+    }
+
+    // 7. NumPy Tensors
+    if (['.npy', '.npz'].includes(ext)) {
+      setFile(prev => prev ? ({
+        ...prev,
+        rows: 'Tensor Sample Dimension',
+        cols: 'Array Features',
+      }) : null);
+      return;
+    }
+
+    // 8. Archives & Binary Model Weights (.zip, .tar.gz, .pt, .onnx, .h5)
+    setFile(prev => prev ? ({
+      ...prev,
+      rows: 'Binary Package Asset',
+      cols: 'Raw Byte Stream',
+    }) : null);
   }
 
   async function handleSave() {
@@ -187,8 +292,8 @@ export default function DatasetUpload({ onBack, onSuccess }) {
                 <p className="dataset-upload-file-name">{file.name}</p>
                 <p className="dataset-upload-file-meta">
                   {file.size}
-                  {file.rows != null ? ` · ${file.rows.toLocaleString()} rows` : ''}
-                  {file.cols != null ? ` · ${file.cols} columns detected` : ' · Inspecting data...'}
+                  {file.rows != null ? ` · ${typeof file.rows === 'number' ? `${file.rows.toLocaleString()} rows` : file.rows}` : ''}
+                  {file.cols != null ? ` · ${typeof file.cols === 'number' ? `${file.cols} columns detected` : file.cols}` : ' · Inspecting format...'}
                 </p>
                 <button onClick={e => { e.stopPropagation(); setFile(null); }} className="dataset-upload-remove-btn">Remove file</button>
               </div>
@@ -279,12 +384,16 @@ export default function DatasetUpload({ onBack, onSuccess }) {
                 { 
                   label: 'Detected Rows', 
                   val: file.rows != null 
-                    ? (file.rows >= 1000 ? `~${(file.rows / 1000).toFixed(1)}K (${file.rows.toLocaleString()})` : `${file.rows.toLocaleString()} rows`)
+                    ? (typeof file.rows === 'number'
+                        ? (file.rows >= 1000 ? `~${(file.rows / 1000).toFixed(1)}K (${file.rows.toLocaleString()} rows)` : `${file.rows.toLocaleString()} rows`)
+                        : String(file.rows))
                     : 'Profiled upon save' 
                 },
                 { 
                   label: 'Detected Columns', 
-                  val: file.cols != null ? `${file.cols} columns` : 'Profiled upon save' 
+                  val: file.cols != null 
+                    ? (typeof file.cols === 'number' ? `${file.cols} columns` : String(file.cols))
+                    : 'Profiled upon save' 
                 },
                 { label: 'Version', val: 'V1 · ' + versionNote },
                 { label: 'Owner', val: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You' },
