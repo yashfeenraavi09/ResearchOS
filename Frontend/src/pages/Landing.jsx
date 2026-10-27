@@ -55,6 +55,15 @@ function DocumentCheckIcon({ size = 20, color = 'currentColor' }) {
     );
 }
 
+function ArrowLeftIcon({ size = 16, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+        </svg>
+    );
+}
+
 function ArrowRightIcon({ size = 16, color = 'currentColor' }) {
     return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -140,6 +149,130 @@ function LayersIcon({ size = 20, color = 'currentColor' }) {
             <polygon points="12 2 2 7 12 12 22 7 12 2" />
             <polyline points="2 17 12 22 22 17" />
             <polyline points="2 12 12 17 22 12" />
+        </svg>
+    );
+}
+
+function HardDriveIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="22" y1="12" x2="2" y2="12" />
+            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+            <line x1="6" y1="16" x2="6.01" y2="16" />
+            <line x1="10" y1="16" x2="10.01" y2="16" />
+        </svg>
+    );
+}
+
+function ZapIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+    );
+}
+
+function SearchIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+    );
+}
+
+function ClockIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+        </svg>
+    );
+}
+
+function TrendingDownIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+            <polyline points="17 18 23 18 23 12" />
+        </svg>
+    );
+}
+
+function LinkIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+    );
+}
+
+function BarChartIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+    );
+}
+
+function PackageIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="16.5" y1="9.4" x2="7.5" y2="4.21" />
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+            <line x1="12" y1="22.08" x2="12" y2="12" />
+        </svg>
+    );
+}
+
+function FileTextIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+        </svg>
+    );
+}
+
+function UsersIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+    );
+}
+
+function LockIcon({ size = 16, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+    );
+}
+
+function SlidersIcon({ size = 16, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
         </svg>
     );
 }
@@ -362,130 +495,103 @@ function SimulatedAutoCursor({ position, isClicking, label = 'Auto-Demo' }) {
 
 function EnhancedCapabilitiesSection() {
     const [activeFeatureTab, setActiveFeatureTab] = useState(0);
-    const [sliderStorage, setSliderStorage] = useState(78);
-    const [selectedFramework, setSelectedFramework] = useState('pytorch');
     const [copiedBibtex, setCopiedBibtex] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
-    const [agentCursor, setAgentCursor] = useState({ x: 0, y: 0, visible: false, isClicking: false });
-
-    const tabBarRef = useRef(null);
-    const tabRefs = useRef([]);
-
-    // Auto-cycle feature tabs with dynamic simulated cursor
-    useEffect(() => {
-        if (isHovered) {
-            setAgentCursor((prev) => ({ ...prev, visible: false }));
-            return;
-        }
-
-        const interval = setInterval(() => {
-            const nextIdx = (activeFeatureTab + 1) % 4;
-            const targetBtn = tabRefs.current[nextIdx];
-            const bar = tabBarRef.current;
-
-            if (targetBtn && bar) {
-                const barRect = bar.getBoundingClientRect();
-                const btnRect = targetBtn.getBoundingClientRect();
-                const targetX = btnRect.left - barRect.left + btnRect.width / 2;
-                const targetY = btnRect.top - barRect.top + btnRect.height / 2;
-
-                setAgentCursor({ x: targetX, y: targetY, visible: true, isClicking: false });
-
-                setTimeout(() => {
-                    setAgentCursor({ x: targetX, y: targetY, visible: true, isClicking: true });
-                    setActiveFeatureTab(nextIdx);
-
-                    setTimeout(() => {
-                        setAgentCursor((prev) => ({ ...prev, isClicking: false }));
-                    }, 350);
-                }, 650);
-            } else {
-                setActiveFeatureTab(nextIdx);
-            }
-        }, 4400);
-
-        return () => clearInterval(interval);
-    }, [activeFeatureTab, isHovered]);
+    const [progress, setProgress] = useState(0);
 
     const featureTabs = [
         {
             id: 0,
             icon: <DatabaseIcon size={18} color="#0D9488" />,
-            title: 'Immutable Dataset Versioning',
-            tag: 'Core Engine',
-            desc: 'Git-style content-addressed snapshots with cryptographic SHA-256 tree verification. Track every data mutation without duplicating disk space.',
-            bullets: [
-                'Zero-overhead delta chunking saves up to 80% storage',
-                'Cryptographic Merkle hashes guarantee raw data integrity',
-                'One-click instant rollback to any historical version',
-                'Works with CSV, Parquet, FASTA, images, and NumPy arrays',
+            title: 'Dataset Versioning',
+            subtitle: 'Smart backups',
+            tag: 'DATASETS',
+            heading: 'Save every data version without filling your disk',
+            desc: 'Whenever you clean, filter, or update a dataset, ResearchOS saves a lightweight snapshot. Roll back anytime, view exact row differences, and detect drift automatically.',
+            highlights: [
+                { icon: <HardDriveIcon size={16} color="#0D9488" />, title: '80% Disk Space Saved', desc: 'Stores only what changed' },
+                { icon: <ZapIcon size={16} color="#0D9488" />, title: '1-Click Rollback', desc: 'Restore any past version instantly' },
+                { icon: <SearchIcon size={16} color="#0D9488" />, title: 'Smart Drift Alerts', desc: 'Know when data shifts' },
             ],
+            nextLabel: 'Live Experiments',
         },
         {
             id: 1,
             icon: <FlaskIcon size={18} color="#6366F1" />,
-            title: 'Real-time Experiment Telemetry',
-            tag: 'Sub-millisecond Logging',
-            desc: 'Stream loss curves, learning rates, system hardware utilization, and weight checkpoints in real-time from PyTorch, JAX, or Hugging Face.',
-            bullets: [
-                'Automatic hardware logging (GPU VRAM, temperature, compute %)',
-                'Sub-millisecond telemetry overhead via asynchronous workers',
-                'Side-by-side run comparison matrix with automatic parameter diffs',
-                'Automatic checkpoint preservation on validation loss minima',
+            title: 'Experiment Tracking',
+            subtitle: 'Live charts & telemetry',
+            tag: 'EXPERIMENTS',
+            heading: 'Watch your models train live with zero slowdown',
+            desc: 'Stream loss curves, accuracy, and GPU memory in real time as your code runs. Integrates seamlessly with just 2 lines of Python code in PyTorch, JAX, or Hugging Face.',
+            highlights: [
+                { icon: <ClockIcon size={16} color="#6366F1" />, title: 'Zero Training Lag', desc: 'Sub-millisecond speed' },
+                { icon: <TrendingDownIcon size={16} color="#6366F1" />, title: 'Live Loss Curves', desc: 'Plotted step-by-step' },
+                { icon: <CpuIcon size={16} color="#6366F1" />, title: 'GPU Health Monitor', desc: 'VRAM & compute metrics' },
             ],
+            nextLabel: 'Model Lineage',
         },
         {
             id: 2,
             icon: <LineageGraphIcon size={18} color="#0284C7" />,
-            title: 'Deterministic Provenance DAGs',
-            tag: 'Audit-ready Integrity',
-            desc: 'Every checkpoint is cryptographically bound to the exact dataset version, code commit, hyperparameters, and environment specifications.',
-            bullets: [
-                'Interactive visual dependency graph from raw data to model weights',
-                '100% audit trail compliance for peer review and clinical trials',
-                'Instant detection of data drift or missing upstream dependencies',
-                'Exportable as publication figures (SVG, PDF, PNG)',
+            title: 'Lineage & Audit',
+            subtitle: 'Data-to-model graph',
+            tag: 'LINEAGE',
+            heading: 'Trace any model back to the exact data that trained it',
+            desc: 'Every checkpoint is linked to its exact dataset version, code commit, and parameters. No more wondering which file or hyperparameters produced your best result.',
+            highlights: [
+                { icon: <LinkIcon size={16} color="#0284C7" />, title: 'Full Traceability', desc: 'Raw data to final weights' },
+                { icon: <ShieldCheckIcon size={16} color="#0284C7" />, title: '100% Audit-Ready', desc: 'Pass peer reviews easily' },
+                { icon: <BarChartIcon size={16} color="#0284C7" />, title: 'Visual Pipeline Graph', desc: 'Interactive step tree' },
             ],
+            nextLabel: '1-Click Export',
         },
         {
             id: 3,
             icon: <DocumentCheckIcon size={18} color="#059669" />,
-            title: 'Publication Reproducibility Bundles',
-            tag: 'Peer-review Ready',
-            desc: 'Export self-contained reproducible packages for journals, reviewers, and teammates. Includes environment lockfiles, BibTeX, and verification seals.',
-            bullets: [
-                'One-click packaging into Docker containers and Conda lockfiles',
-                'Auto-formatted BibTeX citations and permanent artifact hashes',
-                'Zero-configuration reproduction script for reviewers',
-                'Meets ACM, IEEE, NeurIPS, and ICML artifact evaluation standards',
+            title: 'Export & Publishing',
+            subtitle: 'Share paper packages',
+            tag: 'REPRODUCIBILITY',
+            heading: 'Package and share your research in one click',
+            desc: 'Export clean reproducible bundles for reviewers, journals, and lab teammates. Includes sealed dependencies, deterministic random seeds, and instant BibTeX citations.',
+            highlights: [
+                { icon: <PackageIcon size={16} color="#059669" />, title: 'Docker & Conda Lock', desc: 'Runs anywhere smoothly' },
+                { icon: <FileTextIcon size={16} color="#059669" />, title: '1-Click BibTeX', desc: 'Instant paper citation' },
+                { icon: <UsersIcon size={16} color="#059669" />, title: 'Reviewer Friendly', desc: 'Verified artifact package' },
             ],
+            nextLabel: 'Dataset Versioning',
         },
     ];
 
-    const frameworkSnippets = {
-        pytorch: `# PyTorch Integration
-import researchos as ros
-run = ros.init(project="protein-folding")
-for epoch, (x, y) in enumerate(dataloader):
-    loss = criterion(model(x), y)
-    run.log({"epoch": epoch, "loss": loss.item()})`,
-        jax: `# JAX / Flax Integration
-import researchos as ros
-run = ros.init(project="jax-diffusion")
-state, metrics = train_step(state, batch)
-run.log({"step": state.step, "loss": metrics["loss"]})`,
-        huggingface: `# Hugging Face Transformers
-from researchos.integrations.hf import ROSCallback
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    callbacks=[ROSCallback(project="llm-tune")]
-)`,
-        sklearn: `# Scikit-Learn Integration
-import researchos as ros
-ros.sklearn.autolog()
-model.fit(X_train, y_train) # Automatic hyperparameter & metric capture`,
+    const prevTab = () => {
+        setActiveFeatureTab((prev) => (prev === 0 ? featureTabs.length - 1 : prev - 1));
+        setProgress(0);
     };
+
+    const nextTab = () => {
+        setActiveFeatureTab((prev) => (prev + 1) % featureTabs.length);
+        setProgress(0);
+    };
+
+    // Auto-advance timer with smooth progress bar
+    useEffect(() => {
+        if (isHovered) return;
+
+        const intervalMs = 60;
+        const totalDurationMs = 5000;
+        const step = (intervalMs / totalDurationMs) * 100;
+
+        const timer = setInterval(() => {
+            setProgress((prev) => {
+                if (prev >= 100) {
+                    setActiveFeatureTab((curr) => (curr + 1) % featureTabs.length);
+                    return 0;
+                }
+                return prev + step;
+            });
+        }, intervalMs);
+
+        return () => clearInterval(timer);
+    }, [isHovered, featureTabs.length]);
 
     const handleCopyBibtex = () => {
         setCopiedBibtex(true);
@@ -498,94 +604,156 @@ model.fit(X_train, y_train) # Automatic hyperparameter & metric capture`,
         setTimeout(() => setCopiedBibtex(false), 2000);
     };
 
+    const curr = featureTabs[activeFeatureTab];
+    const nextItem = featureTabs[(activeFeatureTab + 1) % featureTabs.length];
+
     return (
-        <div className="capabilities-wrapper" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-            {/* ── PART A: Interactive Flagship Showcase (Apple / Stripe style) ── */}
+        <div 
+            className="capabilities-wrapper simplified" 
+            onMouseEnter={() => setIsHovered(true)} 
+            onMouseLeave={() => setIsHovered(false)}
+        >
             <div className="capability-showcase-container">
-                {/* Horizontal Tab Selector */}
-                <div className="showcase-tab-bar" ref={tabBarRef}>
-                    <SimulatedAutoCursor position={agentCursor} isClicking={agentCursor.isClicking} label="Switching Tab" />
-                    {featureTabs.map((tab, idx) => (
-                        <button
-                            key={tab.id}
-                            ref={(el) => (tabRefs.current[idx] = el)}
-                            className={`showcase-tab-btn ${activeFeatureTab === idx ? 'stab-active' : ''}`}
-                            onClick={() => {
-                                setActiveFeatureTab(idx);
-                                setAgentCursor((prev) => ({ ...prev, visible: false }));
-                            }}
-                        >
-                            <span className="stab-icon">{tab.icon}</span>
-                            <span className="stab-title">{tab.title}</span>
-                            <span className="stab-tag">{tab.tag}</span>
-                        </button>
-                    ))}
+                {/* Modern Navigation Header with Tabs & Dynamic Switching Arrows */}
+                <div className="showcase-header-row">
+                    <div className="showcase-tab-bar">
+                        {featureTabs.map((tab, idx) => (
+                            <button
+                                key={tab.id}
+                                className={`showcase-tab-btn ${activeFeatureTab === idx ? 'stab-active' : ''}`}
+                                onClick={() => {
+                                    setActiveFeatureTab(idx);
+                                    setProgress(0);
+                                }}
+                            >
+                                <span className="stab-icon">{tab.icon}</span>
+                                <span className="stab-title">{tab.title}</span>
+                                <span className="stab-tag">{tab.subtitle}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Dynamic Switching Controls (Arrow Buttons) */}
+                    <div className="showcase-nav-controls">
+                        <span className="showcase-step-counter">
+                            <span className="step-current">0{activeFeatureTab + 1}</span>
+                            <span className="step-divider">/</span>
+                            <span className="step-total">0{featureTabs.length}</span>
+                        </span>
+                        <div className="showcase-arrow-btn-group">
+                            <button 
+                                className="showcase-arrow-btn" 
+                                onClick={prevTab} 
+                                aria-label="Previous feature"
+                                title="Previous feature (←)"
+                            >
+                                <ArrowLeftIcon size={16} />
+                            </button>
+                            <button 
+                                className="showcase-arrow-btn highlight-arrow" 
+                                onClick={nextTab} 
+                                aria-label="Next feature"
+                                title="Next feature (→)"
+                            >
+                                <ArrowRightIcon size={16} />
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Showcase Interactive Canvas (Split panel) */}
+                {/* Animated Progress countdown line */}
+                <div className="showcase-progress-track">
+                    <div 
+                        className="showcase-progress-fill" 
+                        style={{ width: isHovered ? '100%' : `${progress}%`, transition: isHovered ? 'width 0.3s ease' : 'none' }}
+                    />
+                </div>
+
+                {/* Main Showcase Split Panel */}
                 <div className="showcase-body-panel">
+                    {/* Left: Simple, Catchy English Content */}
                     <div className="showcase-left-info">
                         <div className="showcase-badge">
                             <span className="badge-bullet" />
-                            <span>{featureTabs[activeFeatureTab].tag}</span>
+                            <span>{curr.tag}</span>
                         </div>
-                        <h3 className="showcase-heading">{featureTabs[activeFeatureTab].title}</h3>
-                        <p className="showcase-description">{featureTabs[activeFeatureTab].desc}</p>
-                        <div className="showcase-bullets-list">
-                            {featureTabs[activeFeatureTab].bullets.map((b, i) => (
-                                <div key={i} className="bullet-row">
-                                    <div className="bullet-check"><CheckIcon size={13} color="#0D9488" /></div>
-                                    <span className="bullet-text">{b}</span>
+                        <h3 className="showcase-heading">{curr.heading}</h3>
+                        <p className="showcase-description">{curr.desc}</p>
+
+                        {/* 3 Quick Benefit Chips */}
+                        <div className="simple-benefit-chips">
+                            {curr.highlights.map((h, i) => (
+                                <div key={i} className="simple-benefit-chip">
+                                    <span className="benefit-icon">{h.icon}</span>
+                                    <div className="benefit-texts">
+                                        <span className="benefit-title">{h.title}</span>
+                                        <span className="benefit-desc">{h.desc}</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
+
+                        {/* Dynamic Interactive Switching Arrow Pill */}
+                        <div className="showcase-cta-row">
+                            <button className="showcase-next-arrow-btn" onClick={nextTab}>
+                                <span>Next: {nextItem.title}</span>
+                                <span className="bouncing-arrow">
+                                    <ArrowRightIcon size={14} color="#FFFFFF" />
+                                </span>
+                            </button>
+                            <div className="showcase-dots">
+                                {featureTabs.map((_, i) => (
+                                    <span 
+                                        key={i} 
+                                        onClick={() => { setActiveFeatureTab(i); setProgress(0); }}
+                                        className={`showcase-dot ${activeFeatureTab === i ? 'dot-active' : ''}`} 
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
+                    {/* Right: Clean Visual Preview */}
                     <div className="showcase-right-demo">
-                        {/* Dynamic Interactive Demo per Tab */}
                         {activeFeatureTab === 0 && (
                             <div className="demo-card demo-versioning">
                                 <div className="demo-header">
                                     <div className="demo-header-title">
                                         <DatabaseIcon size={16} color="#0D9488" />
-                                        <span>Merkle Snapshot Inspector</span>
+                                        <span>Dataset Version Timeline</span>
                                     </div>
-                                    <span className="demo-status-pill">Delta Compressed</span>
+                                    <span className="demo-status-pill">Active Snapshot</span>
                                 </div>
                                 <div className="demo-version-scrubber">
-                                    <div className="scrubber-label">ACTIVE SNAPSHOT TIMELINE:</div>
+                                    <div className="scrubber-label">VERSION HISTORY:</div>
                                     <div className="scrubber-nodes">
                                         <div className="scrubber-node passed">
-                                            <span className="snode-circle">✓</span>
-                                            <span className="snode-name">v1.0 (Raw)</span>
+                                            <span className="snode-circle">
+                                                <CheckIcon size={11} color="#0D9488" />
+                                            </span>
+                                            <span className="snode-name">V1 Baseline (200 rows)</span>
                                         </div>
                                         <div className="scrubber-line passed-line" />
-                                        <div className="scrubber-node passed">
-                                            <span className="snode-circle">✓</span>
-                                            <span className="snode-name">v2.1 (Filtered)</span>
-                                        </div>
-                                        <div className="scrubber-line active-line" />
                                         <div className="scrubber-node current">
-                                            <span className="snode-circle pulse">3</span>
-                                            <span className="snode-name text-teal">v3.0 (Latest)</span>
+                                            <span className="snode-circle pulse">
+                                                <SparkleIcon size={11} color="#FFFFFF" />
+                                            </span>
+                                            <span className="snode-name text-teal">V2 Current (260 rows)</span>
                                         </div>
                                     </div>
                                 </div>
-
                                 <div className="demo-diff-box">
                                     <div className="diff-header font-mono">
-                                        <span>Diff vs v2.1: +4,200 rows added · 0 duplicated blocks</span>
+                                        <span>Changes: +60 rows · +1 column (treatment_cohort)</span>
                                     </div>
                                     <div className="diff-lines font-mono">
-                                        <div className="diff-line plus">+ seq_id: 84920 | len: 512 | hash: 3a2e91 (Normalized)</div>
-                                        <div className="diff-line plus">+ seq_id: 84921 | len: 384 | hash: 9d10fb (Normalized)</div>
-                                        <div className="diff-line minus">- seq_id: 12042 | len: NaN | [Removed: invalid tail]</div>
+                                        <div className="diff-line plus">+ PT-2001 | treatment: Targeted Inhibitor | age: 58</div>
+                                        <div className="diff-line plus">+ PT-2002 | treatment: Standard Chemo | age: 62</div>
                                     </div>
                                 </div>
-
                                 <div className="demo-footer-metric">
-                                    <span className="metric-highlight font-mono">4.8 GB</span>
-                                    <span className="metric-caption">Storage saved on this snapshot alone via content hashing</span>
+                                    <span className="metric-highlight font-mono">82%</span>
+                                    <span className="metric-caption">Storage saved — only newly added rows are stored on disk</span>
                                 </div>
                             </div>
                         )}
@@ -595,11 +763,10 @@ model.fit(X_train, y_train) # Automatic hyperparameter & metric capture`,
                                 <div className="demo-header">
                                     <div className="demo-header-title">
                                         <FlaskIcon size={16} color="#6366F1" />
-                                        <span>Live Telemetry Stream</span>
+                                        <span>Live Training Stream</span>
                                     </div>
-                                    <span className="demo-status-pill text-indigo">Sub-1ms Ping</span>
+                                    <span className="demo-status-pill text-indigo">● Live · 0.8ms</span>
                                 </div>
-
                                 <div className="telemetry-demo-gauges">
                                     <div className="gauge-item">
                                         <span className="gauge-label">GPU COMPUTE</span>
@@ -609,24 +776,23 @@ model.fit(X_train, y_train) # Automatic hyperparameter & metric capture`,
                                         <span className="gauge-num font-mono">94.2%</span>
                                     </div>
                                     <div className="gauge-item">
-                                        <span className="gauge-label">VRAM UTILIZATION</span>
+                                        <span className="gauge-label">VRAM MEMORY</span>
                                         <div className="gauge-bar-track">
                                             <div className="gauge-bar-fill" style={{ width: '76%', background: '#0D9488' }} />
                                         </div>
                                         <span className="gauge-num font-mono">18.4 / 24 GB</span>
                                     </div>
                                 </div>
-
                                 <div className="demo-run-card">
                                     <div className="run-card-top">
                                         <span className="run-id font-mono">#exp-084: Transformer-12L</span>
                                         <span className="run-tag-pill">Target Accuracy Met</span>
                                     </div>
                                     <div className="run-metrics-grid font-mono">
-                                        <div><span className="sub-key">val_loss:</span> <span className="text-teal font-bold">0.142</span></div>
-                                        <div><span className="sub-key">lr:</span> 2.0e-4</div>
+                                        <div><span className="sub-key">val_loss:</span> <span className="text-teal font-bold">0.142 ↓</span></div>
+                                        <div><span className="sub-key">accuracy:</span> <span className="text-teal font-bold">96.8%</span></div>
                                         <div><span className="sub-key">batch:</span> 64</div>
-                                        <div><span className="sub-key">step:</span> 14,200</div>
+                                        <div><span className="sub-key">epoch:</span> 14 / 20</div>
                                     </div>
                                 </div>
                             </div>
@@ -637,34 +803,42 @@ model.fit(X_train, y_train) # Automatic hyperparameter & metric capture`,
                                 <div className="demo-header">
                                     <div className="demo-header-title">
                                         <LineageGraphIcon size={16} color="#0284C7" />
-                                        <span>Interactive Provenance Chain</span>
+                                        <span>Complete Lineage Chain</span>
                                     </div>
-                                    <span className="demo-status-pill text-blue">DAG Verified</span>
+                                    <span className="demo-status-pill text-blue">Verified</span>
                                 </div>
                                 <div className="mini-interactive-dag">
                                     <div className="dag-step-pill">
                                         <span className="pill-type">RAW DATA</span>
-                                        <span className="pill-val font-mono">sequences_v3</span>
+                                        <span className="pill-val font-mono">biomarkers_v2</span>
                                     </div>
-                                    <div className="dag-flow-arrow">➔</div>
+                                    <div className="dag-flow-arrow">
+                                        <ArrowRightIcon size={12} color="#94A3B8" />
+                                    </div>
                                     <div className="dag-step-pill">
-                                        <span className="pill-type">TOKENIZER</span>
-                                        <span className="pill-val font-mono">bpe_vocab_32k</span>
+                                        <span className="pill-type">PREP</span>
+                                        <span className="pill-val font-mono">standard_scaler</span>
                                     </div>
-                                    <div className="dag-flow-arrow">➔</div>
+                                    <div className="dag-flow-arrow">
+                                        <ArrowRightIcon size={12} color="#94A3B8" />
+                                    </div>
                                     <div className="dag-step-pill pill-selected">
-                                        <span className="pill-type">TRAINING</span>
+                                        <span className="pill-type">TRAIN</span>
                                         <span className="pill-val font-mono">exp-084</span>
                                     </div>
-                                    <div className="dag-flow-arrow">➔</div>
+                                    <div className="dag-flow-arrow">
+                                        <ArrowRightIcon size={12} color="#94A3B8" />
+                                    </div>
                                     <div className="dag-step-pill pill-final">
-                                        <span className="pill-type">WEIGHTS</span>
-                                        <span className="pill-val font-mono">checkpoint.pt</span>
+                                        <span className="pill-type">MODEL</span>
+                                        <span className="pill-val font-mono">model.pt</span>
                                     </div>
                                 </div>
                                 <div className="dag-verify-box font-mono">
-                                    <span className="verify-icon">🔒</span>
-                                    <span>Merkle root: sha256:9f81a742... · Zero upstream drift detected</span>
+                                    <span className="verify-icon">
+                                        <LockIcon size={13} color="#0284C7" />
+                                    </span>
+                                    <span>Cryptographically sealed · Provenance 100% verified</span>
                                 </div>
                             </div>
                         )}
@@ -674,25 +848,37 @@ model.fit(X_train, y_train) # Automatic hyperparameter & metric capture`,
                                 <div className="demo-header">
                                     <div className="demo-header-title">
                                         <DocumentCheckIcon size={16} color="#059669" />
-                                        <span>Reproduction Artifact Package</span>
+                                        <span>Paper Reproduction Package</span>
                                     </div>
                                     <span className="demo-status-pill text-green">Export Ready</span>
                                 </div>
                                 <div className="package-manifest">
                                     <div className="manifest-item">
-                                        <span className="manifest-icon font-mono">📦</span>
+                                        <span className="manifest-icon">
+                                            <PackageIcon size={14} color="#059669" />
+                                        </span>
                                         <span className="manifest-name font-mono">Dockerfile (CUDA 12.2 + PyTorch 2.4)</span>
-                                        <span className="manifest-status font-mono">✓ Sealed</span>
+                                        <span className="manifest-status font-mono">
+                                            <CheckIcon size={12} color="#059669" /> Sealed
+                                        </span>
                                     </div>
                                     <div className="manifest-item">
-                                        <span className="manifest-icon font-mono">📄</span>
+                                        <span className="manifest-icon">
+                                            <FileTextIcon size={14} color="#059669" />
+                                        </span>
                                         <span className="manifest-name font-mono">requirements.lock.txt (Pinned hashes)</span>
-                                        <span className="manifest-status font-mono">✓ Sealed</span>
+                                        <span className="manifest-status font-mono">
+                                            <CheckIcon size={12} color="#059669" /> Sealed
+                                        </span>
                                     </div>
                                     <div className="manifest-item">
-                                        <span className="manifest-icon font-mono">⚖️</span>
+                                        <span className="manifest-icon">
+                                            <SlidersIcon size={14} color="#059669" />
+                                        </span>
                                         <span className="manifest-name font-mono">random_seeds_spec.json (Deterministic)</span>
-                                        <span className="manifest-status font-mono">✓ Sealed</span>
+                                        <span className="manifest-status font-mono">
+                                            <CheckIcon size={12} color="#059669" /> Sealed
+                                        </span>
                                     </div>
                                 </div>
                                 <div className="bibtex-copy-box">
@@ -704,103 +890,6 @@ model.fit(X_train, y_train) # Automatic hyperparameter & metric capture`,
                                 </div>
                             </div>
                         )}
-                    </div>
-                </div>
-            </div>
-
-            {/* ── PART B: Dynamic Modern Micro-Demo Matrix (Not just boring boxes!) ── */}
-            <div className="dynamic-matrix-grid">
-                {/* Card 1: Delta Storage Interactive Calculator */}
-                <div className="matrix-card">
-                    <div className="matrix-card-header">
-                        <div className="matrix-icon-box teal-box">
-                            <DatabaseIcon size={20} color="#0D9488" />
-                        </div>
-                        <span className="matrix-tag">STORAGE EFFICIENCY</span>
-                    </div>
-                    <h4 className="matrix-title">Content-Addressed Delta Chunking</h4>
-                    <p className="matrix-desc">
-                        Store thousands of dataset versions without exploding cloud storage costs. Adjust the slider to see deduplication savings:
-                    </p>
-                    <div className="interactive-slider-box">
-                        <div className="slider-row">
-                            <span className="slider-label">Dataset Mutation Volume:</span>
-                            <span className="slider-val font-mono">{sliderStorage}% Delta</span>
-                        </div>
-                        <input
-                            type="range"
-                            min="10"
-                            max="90"
-                            value={sliderStorage}
-                            onChange={(e) => setSliderStorage(Number(e.target.value))}
-                            className="ros-slider"
-                        />
-                        <div className="slider-result">
-                            <span className="savings-label">Storage Saved:</span>
-                            <span className="savings-highlight font-mono font-bold text-teal">
-                                {(100 - sliderStorage * 0.25).toFixed(1)}% Disk Saved
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Card 2: Framework Native Interactive Switcher */}
-                <div className="matrix-card">
-                    <div className="matrix-card-header">
-                        <div className="matrix-icon-box indigo-box">
-                            <TerminalIcon size={20} color="#6366F1" />
-                        </div>
-                        <span className="matrix-tag">INTEGRATIONS</span>
-                    </div>
-                    <h4 className="matrix-title">Framework Agnostic Python SDK</h4>
-                    <p className="matrix-desc">Works seamlessly with your preferred scientific stack. Click to view the 2-line hook:</p>
-
-                    <div className="framework-pills-row">
-                        {['pytorch', 'jax', 'huggingface', 'sklearn'].map((fw) => (
-                            <button
-                                key={fw}
-                                className={`framework-pill ${selectedFramework === fw ? 'fw-active' : ''}`}
-                                onClick={() => setSelectedFramework(fw)}
-                            >
-                                {fw.toUpperCase()}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="framework-code-snippet">
-                        <pre className="fw-code font-mono">
-                            <code>{frameworkSnippets[selectedFramework]}</code>
-                        </pre>
-                    </div>
-                </div>
-
-                {/* Card 3: Multi-Researcher Collaborative Workspaces */}
-                <div className="matrix-card">
-                    <div className="matrix-card-header">
-                        <div className="matrix-icon-box blue-box">
-                            <ShieldCheckIcon size={20} color="#0284C7" />
-                        </div>
-                        <span className="matrix-tag">COLLABORATION</span>
-                    </div>
-                    <h4 className="matrix-title">Role-Based Lab Workspaces</h4>
-                    <p className="matrix-desc">Share datasets, compare experiment runs across lab members, and enforce immutable reproducibility policies.</p>
-                    <div className="collaborator-presence-card">
-                        <div className="collab-row">
-                            <div className="collab-avatar av-1">EK</div>
-                            <div className="collab-info">
-                                <span className="collab-name">Dr. Elena K. (Lead PI)</span>
-                                <span className="collab-action">Approved Snapshot v3.0</span>
-                            </div>
-                            <span className="collab-time font-mono">2m ago</span>
-                        </div>
-                        <div className="collab-row">
-                            <div className="collab-avatar av-2">MT</div>
-                            <div className="collab-info">
-                                <span className="collab-name">Marcus T. (PhD Candidate)</span>
-                                <span className="collab-action">Running Exp #84 on HPC</span>
-                            </div>
-                            <span className="collab-status-dot" />
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1191,7 +1280,7 @@ export default function Landing({ onGetStarted, onLogin }) {
                         <span className="section-micro-badge">POWERFUL RESEARCH PLATFORM</span>
                         <h2 className="section-heading">Everything needed to organize your lab</h2>
                         <p className="section-subheading">
-                            Designed specifically for researchers, ML engineers, and academic institutions building reproducible intelligence.
+                            Simple tools to version your datasets, monitor training live, and share reproducible results — without the clutter.
                         </p>
                     </div>
                     <EnhancedCapabilitiesSection />
