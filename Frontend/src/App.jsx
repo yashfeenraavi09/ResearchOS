@@ -25,7 +25,12 @@ import Signup from './pages/Signup';
 export default function App() {
   const { user, loading } = useAuth();
   const [page, setPage] = useState('landing');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      return false;
+    }
+    return true;
+  });
 
   // Automatically redirect authenticated users to home, or unauthenticated users to landing
   useEffect(() => {
@@ -53,6 +58,9 @@ export default function App() {
 
   function navigate(p) {
     setPage(p);
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      setSidebarOpen(false);
+    }
 
     if (p === 'datasets') {
       setDatasetsView('list');
@@ -264,6 +272,13 @@ export default function App() {
 
   return (
     <div className="app-layout flex h-screen overflow-hidden bg-[#F7F9FC]">
+      {/* Mobile overlay backdrop */}
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
       <Sidebar
         activePage={page}
         onNavigate={navigate}
@@ -272,7 +287,10 @@ export default function App() {
       />
 
       <div className="app-main-column flex-1 flex flex-col min-w-0 overflow-hidden">
-        <TopBar />
+        <TopBar
+          onToggleSidebar={() => setSidebarOpen((open) => !open)}
+          sidebarOpen={sidebarOpen}
+        />
 
         <main className="app-main-content flex-1 overflow-y-auto">
 

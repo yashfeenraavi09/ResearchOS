@@ -1,11 +1,24 @@
 import React, { useState } from 'react';
 import './TopBar.css';
 
-export default function TopBar() {
+export default function TopBar({ onToggleSidebar, sidebarOpen }) {
   const [query, setQuery] = useState('');
 
   return (
     <header className="topbar-header">
+      {/* Mobile hamburger menu button */}
+      <button
+        type="button"
+        className="mobile-menu-btn"
+        onClick={onToggleSidebar}
+        title={sidebarOpen ? 'Close menu' : 'Open menu'}
+        aria-label="Toggle navigation menu"
+      >
+        <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
+          <path d="M3 4.5h12M3 9h12M3 13.5h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+        </svg>
+      </button>
+
       {/* Search */}
       <div className="topbar-search-container">
         <div className="topbar-search-wrapper">

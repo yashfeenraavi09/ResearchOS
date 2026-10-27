@@ -1,0 +1,805 @@
+/* ============================================================
+   ResearchOS — Global Responsive System
+   Covers: App Shell, Sidebar, TopBar, and all Dashboard/Auth/Landing pages
+   Breakpoints: 1200px | 1024px | 768px | 640px | 480px
+   ============================================================ */
+
+/* ─── APP SHELL & MOBILE SIDEBAR OVERLAY ─────────────────────────────────── */
+
+.mobile-menu-btn {
+  display: none;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #3A4A5C;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.mobile-menu-btn:hover {
+  background: #E2E8F0;
+  color: #0F9D8A;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 18, 32, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 95;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .app-layout {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Make sidebar slide in from the left over the content */
+  .sidebar-container {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    height: 100dvh !important;
+    z-index: 100 !important;
+    box-shadow: 4px 0 24px rgba(11, 18, 32, 0.18);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), width 0.2s ease !important;
+  }
+
+  .sidebar-container.sidebar-collapsed {
+    transform: translateX(-100%) !important;
+    width: 240px !important; /* Keep size stable when hidden */
+    pointer-events: none;
+  }
+
+  .sidebar-container.sidebar-open {
+    transform: translateX(0) !important;
+    width: 240px !important;
+    pointer-events: auto;
+  }
+
+  /* Main column spans full width without squeezing */
+  .app-main-column {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0;
+  }
+
+  /* Topbar adjusts on mobile */
+  .topbar-header {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .topbar-search-container {
+    max-width: 100%;
+  }
+
+  .topbar-search-input {
+    font-size: 12px;
+    padding: 6px 32px 6px 30px;
+  }
+
+  .topbar-kbd-badge {
+    display: none;
+  }
+}
+
+/* ─── HOME DASHBOARD ─────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .home-container {
+    padding: 16px;
+  }
+
+  .home-quick-actions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .home-glance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .home-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-span-2 {
+    grid-column: span 1 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-container {
+    padding: 12px;
+  }
+
+  .home-hero {
+    min-height: auto;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+
+  .home-hero-body {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .home-hero-text-col {
+    padding: 18px 16px;
+    max-width: 100%;
+  }
+
+  .home-hero-brand {
+    margin-bottom: 12px;
+  }
+
+  .home-hero-heading {
+    font-size: 20px;
+    line-height: 1.25;
+    margin-bottom: 10px;
+  }
+
+  .home-hero-desc {
+    font-size: 13px;
+    line-height: 1.45;
+    margin-bottom: 16px;
+  }
+
+  .home-hero-btns {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .home-hero-primary-btn,
+  .home-hero-secondary-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 16px;
+  }
+
+  .home-hero-statusbar {
+    padding: 10px 14px;
+    gap: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+
+  .home-hero-metric-item {
+    flex-shrink: 0;
+  }
+
+  .home-hero-metric-value {
+    font-size: 15px;
+  }
+
+  .home-card-header {
+    padding: 12px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .home-tabs-pill {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-quick-actions-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-glance-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-hero-heading {
+    font-size: 18px;
+  }
+}
+
+/* ─── DATASET LIST ───────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .datasetlist-container {
+    padding: 12px;
+  }
+
+  .datasetlist-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .datasetlist-upload-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .datasetlist-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .datasetlist-search-wrap {
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  .datasetlist-filter-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .datasetlist-grid,
+  .datasets-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+}
+
+/* ─── DATASET DETAIL & VERSION COMPARISON ────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .datasetdetail-container {
+    padding: 16px;
+  }
+
+  .datasetdetail-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .datasetdetail-stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .datasetdetail-container {
+    padding: 12px;
+  }
+
+  .datasetdetail-actions-row {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .datasetdetail-action-btn,
+  .datasetdetail-primary-btn {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+    text-align: center;
+  }
+
+  .datasetdetail-tab-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    padding-bottom: 4px;
+  }
+
+  .datasetdetail-tab-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .datasetdetail-stats-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  .datasetdetail-profile-grid,
+  .datasetdetail-schema-grid,
+  .datasetdetail-columns-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .datasetdetail-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Version Comparison */
+  .version-comp-container {
+    padding: 12px;
+  }
+
+  .version-comp-selectors {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .version-comp-diff-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .version-comp-stat-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+}
+
+/* ─── DATASET UPLOAD ─────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .dataset-upload-container {
+    padding: 12px;
+  }
+
+  .dataset-upload-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dataset-upload-dropzone {
+    padding: 24px 16px;
+  }
+
+  .dataset-upload-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dataset-upload-submit-btn,
+  .dataset-upload-cancel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ─── EXPERIMENT LIST ────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .experiment-list-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .experiment-list-container {
+    padding: 12px;
+  }
+
+  .experiment-list-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .experiment-list-new-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .experiment-list-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+  }
+
+  .experiment-list-filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .exp-list-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+  }
+
+  .exp-list-table {
+    min-width: 620px;
+  }
+}
+
+@media (max-width: 480px) {
+  .experiment-list-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── EXPERIMENT DETAIL ──────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .exp-detail-body-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .exp-detail-container {
+    padding: 12px;
+  }
+
+  .exp-detail-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .exp-detail-actions-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .exp-detail-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+  }
+
+  .exp-detail-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  .exp-detail-tab-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .exp-detail-charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .exp-detail-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  .exp-detail-metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── NEW EXPERIMENT ─────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .new-exp-container {
+    padding: 12px;
+  }
+
+  .new-exp-stepper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+  }
+
+  .new-exp-step-item {
+    flex-shrink: 0;
+  }
+
+  .new-exp-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .new-exp-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .new-exp-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ─── RESULTS & BENCHMARKS ───────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .results-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .results-container {
+    padding: 12px;
+  }
+
+  .results-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .results-filters-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .results-metric-pills {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .results-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+  }
+
+  .results-table {
+    min-width: 580px;
+  }
+}
+
+/* ─── LINEAGE GRAPH ──────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .lineage-toolbar {
+    padding: 8px 12px;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+
+  .lineage-toolbar-lbl {
+    display: none;
+  }
+
+  .lineage-jumps-wrap {
+    flex-shrink: 0;
+  }
+
+  .lineage-body {
+    flex-direction: column-reverse;
+  }
+
+  .lineage-side-panel {
+    width: 100% !important;
+    max-height: 220px;
+    border-right: none;
+    border-top: 1px solid #E2E8F0;
+    overflow-y: auto;
+  }
+}
+
+/* ─── COPILOT ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .copilot-container {
+    height: calc(100dvh - 56px);
+  }
+
+  .copilot-header {
+    padding: 10px 12px;
+  }
+
+  .copilot-context-badge {
+    display: none;
+  }
+
+  .copilot-messages-area {
+    padding: 12px;
+  }
+
+  .copilot-input-bar {
+    padding: 10px 12px;
+  }
+
+  .copilot-suggestions-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .copilot-suggestion-chip {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+}
+
+/* ─── TRACKING SDK ───────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .tracking-container {
+    padding: 12px;
+  }
+
+  .tracking-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .tracking-stats-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tracking-card-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── SETTINGS ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .settings-container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .settings-nav {
+    width: 100% !important;
+    border-right: none;
+    border-bottom: 1px solid #E2E8F0;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 6px;
+    flex-wrap: nowrap;
+    height: auto;
+    flex-shrink: 0;
+  }
+
+  .settings-nav-title {
+    display: none;
+  }
+
+  .settings-nav-btn {
+    white-space: nowrap;
+    min-width: fit-content;
+    padding: 7px 12px;
+    font-size: 12px;
+    margin-bottom: 0;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    background: #F1F5F9;
+  }
+
+  .settings-nav-btn.active {
+    background: #E6F7F5;
+  }
+
+  .settings-content {
+    padding: 16px 12px;
+    overflow-y: visible;
+    height: auto;
+  }
+
+  .settings-two-col,
+  .settings-form-row {
+    flex-direction: column !important;
+    gap: 12px;
+  }
+
+  .settings-grid,
+  .settings-card-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── PROJECTS & WORKSPACE ───────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .projects-list-container {
+    padding: 12px;
+  }
+
+  .projects-list-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .create-proj-container {
+    padding: 12px;
+  }
+
+  .create-proj-done-card {
+    padding: 24px 16px;
+  }
+
+  /* Workspace */
+  .proj-workspace-container {
+    padding: 12px;
+  }
+
+  .proj-workspace-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .proj-workspace-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  .proj-workspace-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── AUTH: LOGIN & SIGNUP ───────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .login-split-layout,
+  .signup-split-layout {
+    flex-direction: column;
+  }
+
+  .login-visual-panel,
+  .signup-visual-panel {
+    display: none !important;
+  }
+
+  .login-form-panel,
+  .signup-form-panel {
+    width: 100% !important;
+    padding: 28px 16px;
+    min-height: 100dvh;
+    box-shadow: none;
+  }
+}
+
+/* ─── GLOBAL UTILITIES & TOUCH IMPROVEMENTS ──────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* Prevent horizontal runaway scroll */
+  body, html, #root {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Accessible tap targets */
+  button, input, select, a {
+    touch-action: manipulation;
+  }
+
+  /* Clean headings wrap */
+  h1, h2, h3, h4 {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+}
