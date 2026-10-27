@@ -33,7 +33,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 # Import ResearchOS SDK
-from tracking_plugin import sdk
+try:
+    from Backend.tracking_plugin import sdk
+except ImportError:
+    from tracking_plugin import sdk
 
 # Configuration
 API_URL = os.getenv("RESEARCHOS_API_URL", "http://localhost:8000")
