@@ -18,6 +18,7 @@ async def db_get(table: str, token: str, params: Optional[Dict[str, Any]] = None
             params=params or {},
         )
         if resp.status_code not in (200, 206):
+            print(f"[Supabase DB Error] GET {table} -> status {resp.status_code}: {resp.text}")
             return []
         return resp.json()
 
@@ -35,6 +36,7 @@ async def db_post(table: str, token: str, data: Dict[str, Any]) -> Optional[Dict
         if resp.status_code in (200, 201):
             res = resp.json()
             return res[0] if isinstance(res, list) and res else res
+        print(f"[Supabase DB Error] POST {table} -> status {resp.status_code}: {resp.text}")
         return None
 
 async def db_patch(table: str, token: str, params: Dict[str, Any], data: Dict[str, Any]) -> Optional[Dict[str, Any]]:

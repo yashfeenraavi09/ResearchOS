@@ -113,7 +113,10 @@ async def upload_dataset(
 
     created_ds = await db_post("datasets", token, dataset_payload)
     if not created_ds:
-        raise HTTPException(status_code=500, detail="Failed to create dataset in database")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to save dataset in Supabase. Please ensure supabase_schema.sql has been run in your Supabase SQL Editor.",
+        )
 
     dataset_id = created_ds["id"]
 
@@ -138,6 +141,11 @@ async def upload_dataset(
         "storage_path": rel_storage_path,
     }
     created_ver = await db_post("dataset_versions", token, version_payload)
+    if not created_ver:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to record dataset version in Supabase. Please verify the dataset_versions table exists.",
+        )
 
     await log_activity(
         token, user_id,

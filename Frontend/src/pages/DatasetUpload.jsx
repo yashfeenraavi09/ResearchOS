@@ -412,6 +412,19 @@ export default function DatasetUpload({ onBack, onSuccess }) {
             )}
           </div>
 
+          {errorMsg && (
+            <div className="dataset-upload-error-banner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <div className="dataset-upload-error-text">
+                <strong>Upload Failed:</strong> {errorMsg}
+              </div>
+            </div>
+          )}
+
           <div className="dataset-upload-footer-between">
             <button onClick={() => setStep('configure')} className="dataset-upload-back-btn">Back</button>
             <button onClick={handleSave} disabled={saving} className="dataset-upload-save-btn">

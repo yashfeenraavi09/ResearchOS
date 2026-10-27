@@ -478,3 +478,32 @@
   color: #0B1220;
   margin: 4px 0 0 0;
 }
+
+.dataset-upload-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: #DC2626;
+  font-size: 13px;
+  margin-top: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.dataset-upload-error-banner svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.dataset-upload-error-text {
+  line-height: 1.5;
+  color: #991B1B;
+}
+
+.dataset-upload-error-text strong {
+  color: #DC2626;
+  font-weight: 600;
+}

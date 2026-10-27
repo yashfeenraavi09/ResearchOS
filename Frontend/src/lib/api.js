@@ -123,8 +123,18 @@ export async function uploadDatasetFile(formData) {
             body: formData,
         });
         if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || 'Upload failed');
+            let errorMsg = 'Upload failed';
+            try {
+                const json = await res.json();
+                errorMsg = json.detail || json.message || JSON.stringify(json);
+            } catch {
+                try {
+                    errorMsg = await res.text() || `Server error (${res.status})`;
+                } catch {
+                    errorMsg = `Server error (${res.status})`;
+                }
+            }
+            throw new Error(errorMsg);
         }
         return await res.json();
     } catch (err) {
@@ -146,8 +156,18 @@ export async function uploadNewVersion(datasetId, formData) {
             body: formData,
         });
         if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || 'Version upload failed');
+            let errorMsg = 'Version upload failed';
+            try {
+                const json = await res.json();
+                errorMsg = json.detail || json.message || JSON.stringify(json);
+            } catch {
+                try {
+                    errorMsg = await res.text() || `Server error (${res.status})`;
+                } catch {
+                    errorMsg = `Server error (${res.status})`;
+                }
+            }
+            throw new Error(errorMsg);
         }
         return await res.json();
     } catch (err) {
