@@ -33,6 +33,14 @@ async def get_dataset(dataset_id: str, user: dict = Depends(get_current_user)):
     if not ds:
         raise HTTPException(status_code=404, detail="Dataset not found")
 
+    if ds.get("project_id"):
+        try:
+            proj = await db_get_one("projects", token, {"id": f"eq.{ds['project_id']}"})
+            if proj:
+                ds["project_name"] = proj.get("name")
+        except Exception:
+            pass
+
     versions = await db_get("dataset_versions", token, {
         "dataset_id": f"eq.{dataset_id}",
         "order": "created_at.desc",

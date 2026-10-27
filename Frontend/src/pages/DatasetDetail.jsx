@@ -148,6 +148,7 @@ export default function DatasetDetail({ datasetId, onBack, onCompare }) {
           owner: data.owner || 'You',
           updated: data.updated || (data.created_at ? new Date(data.created_at).toLocaleDateString() : 'Recently'),
           qualityScore: data.quality_score ?? data.qualityScore ?? 100,
+          projectName: data.project_name || null,
           versions: data.versions || [],
           quality: data.quality || data.quality_breakdown || [],
           pcaDrift: data.pcaDrift || data.pca_drift || [],
@@ -272,6 +273,11 @@ export default function DatasetDetail({ datasetId, onBack, onCompare }) {
         <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><path d="M4.5 3L7.5 6L4.5 9" stroke="#A0AEBF" strokeWidth="1.3" strokeLinecap="round"/></svg>
         <span className="datasetdetail-crumb-current">{ds.name}</span>
         <span className={`datasetdetail-type-pill ${ds.type}`}>{ds.type}</span>
+        {ds.projectName && (
+          <span style={{ fontSize: '11px', background: '#F1F5F9', color: '#475569', padding: '3px 8px', borderRadius: '4px', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            📁 {ds.projectName}
+          </span>
+        )}
       </div>
 
       {/* Title row */}

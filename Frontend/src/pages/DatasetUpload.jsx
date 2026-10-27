@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { createDataset, uploadDatasetFile } from '../lib/api';
+import { useState, useRef, useEffect } from 'react';
+import { createDataset, uploadDatasetFile, fetchProjects } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import './DatasetUpload.css';
 
@@ -19,9 +19,19 @@ export default function DatasetUpload({ onBack, onSuccess }) {
   const [desc, setDesc] = useState('');
   const [type, setType] = useState('Tabular');
   const [versionNote, setVersionNote] = useState('Initial upload');
+  const [projects, setProjects] = useState([]);
+  const [projectId, setProjectId] = useState('');
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    fetchProjects()
+      .then(data => {
+        if (Array.isArray(data)) setProjects(data);
+      })
+      .catch(err => console.error('Failed to load projects', err));
+  }, []);
 
   function handleFileDrop(e) {
     e.preventDefault();
@@ -219,6 +229,9 @@ export default function DatasetUpload({ onBack, onSuccess }) {
         formData.append('dataset_type', type);
         formData.append('version_label', 'V1');
         formData.append('version_note', versionNote.trim());
+        if (projectId) {
+          formData.append('project_id', projectId);
+        }
 
         await uploadDatasetFile(formData);
       } else {
@@ -228,6 +241,7 @@ export default function DatasetUpload({ onBack, onSuccess }) {
           type,
           size_str: file?.size || '1.0 MB',
           tags: [type],
+          project_id: projectId || undefined,
         });
       }
       onSuccess();
@@ -346,14 +360,25 @@ export default function DatasetUpload({ onBack, onSuccess }) {
             </div>
           </div>
 
-          <div className="dataset-upload-field-group">
-            <label className="dataset-upload-label">Description</label>
-            <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} className="dataset-upload-textarea" placeholder="Describe the dataset, its source, and use cases..." />
+          <div className="dataset-upload-grid-2">
+            <div className="dataset-upload-field-group">
+              <label className="dataset-upload-label">Associated Project</label>
+              <select value={projectId} onChange={e => setProjectId(e.target.value)} className="dataset-upload-select">
+                <option value="">No Project (Standalone Dataset)</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="dataset-upload-field-group">
+              <label className="dataset-upload-label">Version Note (V1)</label>
+              <input value={versionNote} onChange={e => setVersionNote(e.target.value)} className="dataset-upload-input" placeholder="Initial upload" />
+            </div>
           </div>
 
           <div className="dataset-upload-field-group">
-            <label className="dataset-upload-label">Version Note (V1)</label>
-            <input value={versionNote} onChange={e => setVersionNote(e.target.value)} className="dataset-upload-input" />
+            <label className="dataset-upload-label">Description</label>
+            <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} className="dataset-upload-textarea" placeholder="Describe the dataset, its source, and use cases..." />
           </div>
 
           <div className="dataset-upload-info-box">
@@ -378,6 +403,7 @@ export default function DatasetUpload({ onBack, onSuccess }) {
             <div className="dataset-upload-review-grid">
               {[
                 { label: 'Dataset Name', val: name || '—' },
+                { label: 'Project', val: projects.find(p => p.id === projectId)?.name || 'None (Standalone)' },
                 { label: 'Type', val: type },
                 { label: 'Source File', val: file.name },
                 { label: 'File Size', val: file.size },
