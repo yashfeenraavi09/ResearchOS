@@ -38,8 +38,67 @@ export default function DatasetUpload({ onBack, onSuccess }) {
   function processFile(f) {
     setRawFile(f);
     const sizeStr = f.size > 1_000_000 ? `${(f.size / 1_000_000).toFixed(1)} MB` : `${(f.size / 1_000).toFixed(0)} KB`;
-    setFile({ name: f.name, size: sizeStr });
+    
+    // Base file state
+    setFile({
+      name: f.name,
+      size: sizeStr,
+      rows: null,
+      cols: null,
+    });
     setName(f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+
+    // Client-side quick row and column inspection for CSV, TSV, and JSON datasets
+    if (f.name.endsWith('.csv') || f.name.endsWith('.tsv') || f.type.includes('csv') || f.type.includes('text')) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const content = evt.target?.result;
+          if (typeof content === 'string') {
+            const lines = content.trim().split(/\r?\n/).filter(line => line.trim().length > 0);
+            if (lines.length > 0) {
+              const rowCount = Math.max(0, lines.length - 1); // exclude header row
+              const delimiter = f.name.endsWith('.tsv') ? '\t' : ',';
+              const colCount = lines[0].split(delimiter).length;
+              setFile(prev => prev ? ({
+                ...prev,
+                rows: rowCount,
+                cols: colCount,
+              }) : null);
+            }
+          }
+        } catch (err) {
+          console.warn('Could not inspect CSV client-side', err);
+        }
+      };
+      // Read first 2MB for fast row inspection
+      reader.readAsText(f.slice(0, 2 * 1024 * 1024));
+    } else if (f.name.endsWith('.json') || f.name.endsWith('.jsonl')) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const content = evt.target?.result;
+          if (typeof content === 'string') {
+            if (f.name.endsWith('.jsonl')) {
+              const lines = content.trim().split(/\r?\n/).filter(l => l.trim().length > 0);
+              setFile(prev => prev ? ({ ...prev, rows: lines.length, cols: 'Dynamic' }) : null);
+            } else {
+              const data = JSON.parse(content);
+              if (Array.isArray(data)) {
+                setFile(prev => prev ? ({
+                  ...prev,
+                  rows: data.length,
+                  cols: data[0] && typeof data[0] === 'object' ? Object.keys(data[0]).length : 1,
+                }) : null);
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Could not parse JSON client-side', err);
+        }
+      };
+      reader.readAsText(f.slice(0, 2 * 1024 * 1024));
+    }
   }
 
   async function handleSave() {
@@ -126,7 +185,11 @@ export default function DatasetUpload({ onBack, onSuccess }) {
                   <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#0F9D8A" strokeWidth="1.5"/><polyline points="14,2 14,8 20,8" stroke="#0F9D8A" strokeWidth="1.5"/></svg>
                 </div>
                 <p className="dataset-upload-file-name">{file.name}</p>
-                <p className="dataset-upload-file-meta">{file.size} · {(file.rows / 1000).toFixed(0)}K rows · {file.cols} columns detected</p>
+                <p className="dataset-upload-file-meta">
+                  {file.size}
+                  {file.rows != null ? ` · ${file.rows.toLocaleString()} rows` : ''}
+                  {file.cols != null ? ` · ${file.cols} columns detected` : ' · Inspecting data...'}
+                </p>
                 <button onClick={e => { e.stopPropagation(); setFile(null); }} className="dataset-upload-remove-btn">Remove file</button>
               </div>
             ) : (
@@ -213,8 +276,16 @@ export default function DatasetUpload({ onBack, onSuccess }) {
                 { label: 'Type', val: type },
                 { label: 'Source File', val: file.name },
                 { label: 'File Size', val: file.size },
-                { label: 'Detected Rows', val: `~${(file.rows / 1000).toFixed(0)}K` },
-                { label: 'Detected Columns', val: String(file.cols) },
+                { 
+                  label: 'Detected Rows', 
+                  val: file.rows != null 
+                    ? (file.rows >= 1000 ? `~${(file.rows / 1000).toFixed(1)}K (${file.rows.toLocaleString()})` : `${file.rows.toLocaleString()} rows`)
+                    : 'Profiled upon save' 
+                },
+                { 
+                  label: 'Detected Columns', 
+                  val: file.cols != null ? `${file.cols} columns` : 'Profiled upon save' 
+                },
                 { label: 'Version', val: 'V1 · ' + versionNote },
                 { label: 'Owner', val: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You' },
               ].map(s => (
