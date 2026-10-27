@@ -277,6 +277,25 @@ function SlidersIcon({ size = 16, color = 'currentColor' }) {
     );
 }
 
+function MenuIcon({ size = 22, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+    );
+}
+
+function XIcon({ size = 22, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+    );
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    STATIC DATA
 ───────────────────────────────────────────────────────────────────────────── */
@@ -1036,7 +1055,26 @@ export default function Landing({ onGetStarted, onLogin }) {
     const [showScrollTop, setShowScrollTop] = useState(false);
     const [openFaq, setOpenFaq] = useState(0);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0, active: false, px: 0, py: 0 });
+    const [menuOpen, setMenuOpen] = useState(false);
     const heroRef = useRef(null);
+
+    // Close sidebar on ESC key
+    useEffect(() => {
+        const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, []);
+
+    // Lock body scroll when sidebar is open
+    useEffect(() => {
+        document.body.style.overflow = menuOpen ? 'hidden' : '';
+        return () => { document.body.style.overflow = ''; };
+    }, [menuOpen]);
+
+    const closeMobileMenu = (id) => {
+        setMenuOpen(false);
+        if (id) setTimeout(() => scrollTo(id), 50);
+    };
 
     const handleHeroMouseMove = (e) => {
         if (!heroRef.current) return;
@@ -1100,10 +1138,12 @@ export default function Landing({ onGetStarted, onLogin }) {
             {/* ── NAV ────────────────────────────────────────────────────── */}
             <nav className={`landing-light-nav ${scrolled ? 'nav-scrolled' : ''}`}>
                 <div className="nav-container">
+                    {/* Brand */}
                     <div className="nav-brand" onClick={() => scrollTo('hero')}>
                         <ResearchOSLogo size={32} showWordmark={true} textColor="#0F172A" />
-
                     </div>
+
+                    {/* Desktop links (hidden on mobile) */}
                     <div className="nav-links">
                         {navLinks.map((l) => (
                             <button key={l.label} className="nav-link-btn" onClick={() => scrollTo(l.targetId)}>
@@ -1111,15 +1151,89 @@ export default function Landing({ onGetStarted, onLogin }) {
                             </button>
                         ))}
                     </div>
-                    <div className="nav-actions">
+
+                    {/* Desktop CTA buttons (hidden on mobile) */}
+                    <div className="nav-actions nav-actions-desktop">
                         <button onClick={onLogin} className="nav-login-btn">Sign in</button>
                         <button onClick={onGetStarted} className="nav-primary-btn">
                             <span>Get started free</span>
                             <ArrowRightIcon size={14} color="#FFFFFF" />
                         </button>
                     </div>
+
+                    {/* Hamburger button (visible on mobile only) */}
+                    <button
+                        className={`nav-hamburger-btn ${menuOpen ? 'is-open' : ''}`}
+                        onClick={() => setMenuOpen((o) => !o)}
+                        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                        aria-expanded={menuOpen}
+                    >
+                        {menuOpen ? <XIcon size={22} color="#0F172A" /> : <MenuIcon size={22} color="#0F172A" />}
+                    </button>
                 </div>
             </nav>
+
+            {/* ── MOBILE SIDEBAR OVERLAY ──────────────────────────────────── */}
+            {/* Backdrop */}
+            <div
+                className={`mobile-nav-backdrop ${menuOpen ? 'backdrop-visible' : ''}`}
+                onClick={() => setMenuOpen(false)}
+                aria-hidden="true"
+            />
+
+            {/* Sidebar drawer */}
+            <aside className={`mobile-nav-sidebar ${menuOpen ? 'sidebar-open' : ''}`} aria-label="Mobile navigation">
+                {/* Sidebar header */}
+                <div className="sidebar-header">
+                    <div className="sidebar-brand" onClick={() => closeMobileMenu('hero')}>
+                        <ResearchOSLogo size={28} showWordmark={true} textColor="#0F172A" />
+                    </div>
+                    <button className="sidebar-close-btn" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+                        <XIcon size={20} color="#64748B" />
+                    </button>
+                </div>
+
+                {/* Nav links */}
+                <nav className="sidebar-nav-links">
+                    {navLinks.map((l, idx) => (
+                        <button
+                            key={l.label}
+                            className="sidebar-nav-link"
+                            style={{ animationDelay: `${idx * 0.06}s` }}
+                            onClick={() => closeMobileMenu(l.targetId)}
+                        >
+                            <ArrowRightIcon size={14} color="#0D9488" />
+                            {l.label}
+                        </button>
+                    ))}
+                </nav>
+
+                {/* Sidebar divider */}
+                <div className="sidebar-divider" />
+
+                {/* Auth buttons */}
+                <div className="sidebar-auth-btns">
+                    <button
+                        onClick={() => { setMenuOpen(false); onLogin(); }}
+                        className="sidebar-signin-btn"
+                    >
+                        Sign in
+                    </button>
+                    <button
+                        onClick={() => { setMenuOpen(false); onGetStarted(); }}
+                        className="sidebar-getstarted-btn"
+                    >
+                        <span>Get started free</span>
+                        <ArrowRightIcon size={14} color="#FFFFFF" />
+                    </button>
+                </div>
+
+                {/* Sidebar footer badge */}
+                <div className="sidebar-footer-badge">
+                    <span className="sidebar-footer-dot" />
+                    <span>System active · Free for researchers</span>
+                </div>
+            </aside>
 
             {/* ── HERO SECTION WITH INTERACTIVE BACKGROUND ─────────────── */}
             <section
