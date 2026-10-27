@@ -31,6 +31,32 @@
   gap: 8px;
 }
 
+.sidebar-header.sidebar-header-collapsed {
+  padding: 0;
+  justify-content: center;
+}
+
+.sidebar-expand-btn-collapsed {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #0F9D8A;
+  background-color: #E6F7F5;
+  border: 1px solid rgba(15, 157, 138, 0.25);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sidebar-expand-btn-collapsed:hover {
+  background-color: #CCFBF1;
+  color: #0F766E;
+  border-color: #0F9D8A;
+  transform: scale(1.05);
+}
+
 .sidebar-mark {
   width: 26px;
   height: 26px;

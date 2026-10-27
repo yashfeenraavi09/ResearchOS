@@ -71,54 +71,63 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onToggle }) {
 
   return (
     <aside className={`sidebar-container ${isOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-      {/* Logo row */}
-      <div className="sidebar-header">
-        {/* Mark (always visible) */}
-        <svg viewBox="0 0 26 26" fill="none" className="sidebar-mark" aria-label="ResearchOS">
-          <defs>
-            <linearGradient id="sb-mark-g" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#14B8A6" />
-              <stop offset="100%" stopColor="#22D3EE" />
-            </linearGradient>
-          </defs>
-          <path d="M 13,5 Q 10.47,12.54 5.21,18.5 Q 13,16.93 20.79,18.5 Q 15.53,12.54 13,5 Z"
-            stroke="#14B8A6" strokeWidth="1.4" fill="none" />
-          <circle cx="5.21"  cy="18.5" r="2.8" fill="#0B1F3A" />
-          <circle cx="20.79" cy="18.5" r="2.2" fill="#14B8A6" />
-          <circle cx="13"    cy="5"    r="1.8" fill="#22D3EE" />
-          <circle cx="13"    cy="14"   r="1.4" fill="url(#sb-mark-g)" />
-        </svg>
-
-        {/* Wordmark — only when expanded */}
-        {isOpen && (
-          <span className="sidebar-wordmark">
-            <svg viewBox="0 0 116 18" fill="none" style={{ width: 116, height: 18 }} aria-hidden="true">
-              <text x="0" y="14"
-                fontFamily="'Inter', ui-sans-serif, system-ui, sans-serif"
-                fontSize="14" letterSpacing="-0.3">
-                <tspan fontWeight="500" fill="#0B1220">Research</tspan>
-                <tspan fontWeight="700" fill="#14B8A6">OS</tspan>
-              </text>
+      {/* Logo row / Collapse row */}
+      <div className={`sidebar-header ${!isOpen ? 'sidebar-header-collapsed' : ''}`}>
+        {isOpen ? (
+          <>
+            {/* Mark */}
+            <svg viewBox="0 0 26 26" fill="none" className="sidebar-mark" aria-label="ResearchOS">
+              <defs>
+                <linearGradient id="sb-mark-g" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#14B8A6" />
+                  <stop offset="100%" stopColor="#22D3EE" />
+                </linearGradient>
+              </defs>
+              <path d="M 13,5 Q 10.47,12.54 5.21,18.5 Q 13,16.93 20.79,18.5 Q 15.53,12.54 13,5 Z"
+                stroke="#14B8A6" strokeWidth="1.4" fill="none" />
+              <circle cx="5.21"  cy="18.5" r="2.8" fill="#0B1F3A" />
+              <circle cx="20.79" cy="18.5" r="2.2" fill="#14B8A6" />
+              <circle cx="13"    cy="5"    r="1.8" fill="#22D3EE" />
+              <circle cx="13"    cy="14"   r="1.4" fill="url(#sb-mark-g)" />
             </svg>
-          </span>
+
+            {/* Wordmark — only when expanded */}
+            <span className="sidebar-wordmark">
+              <svg viewBox="0 0 116 18" fill="none" style={{ width: 116, height: 18 }} aria-hidden="true">
+                <text x="0" y="14"
+                  fontFamily="'Inter', ui-sans-serif, system-ui, sans-serif"
+                  fontSize="14" letterSpacing="-0.3">
+                  <tspan fontWeight="500" fill="#0B1220">Research</tspan>
+                  <tspan fontWeight="700" fill="#14B8A6">OS</tspan>
+                </text>
+              </svg>
+            </span>
+
+            {/* Collapse button */}
+            <button
+              onClick={onToggle}
+              className="sidebar-toggle-btn"
+              title="Collapse sidebar"
+              aria-label="Collapse sidebar"
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 14 14">
+                <path d="M8.5 3.5L5 7l3.5 3.5M11.5 3.5L8 7l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </>
+        ) : (
+          /* When collapsed: instead of logo, show the arrow expand button */
+          <button
+            onClick={onToggle}
+            className="sidebar-expand-btn-collapsed"
+            title="Expand sidebar"
+            aria-label="Expand sidebar"
+          >
+            <svg width="16" height="16" fill="none" viewBox="0 0 14 14">
+              <path d="M4.5 3.5L8 7l-3.5 3.5M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         )}
-
-        {/* Toggle button — always on right edge */}
-        <button
-          onClick={onToggle}
-          className="sidebar-toggle-btn"
-          title={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-        >
-          {isOpen ? (
-            <svg width="14" height="14" fill="none" viewBox="0 0 14 14">
-              <path d="M8.5 3.5L5 7l3.5 3.5M11.5 3.5L8 7l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          ) : (
-            <svg width="14" height="14" fill="none" viewBox="0 0 14 14">
-              <path d="M5.5 3.5L9 7l-3.5 3.5M2.5 3.5L6 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
-        </button>
       </div>
 
       {/* Navigation */}
