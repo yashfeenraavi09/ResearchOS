@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { fetchDataset } from '../lib/api';
+import { useState, useEffect, useRef } from 'react';
+import { fetchDataset, uploadNewVersion } from '../lib/api';
+import { supabase } from '../lib/supabaseClient';
 import './DatasetDetail.css';
 
 function fmt(n) {
@@ -121,38 +122,119 @@ export default function DatasetDetail({ datasetId, onBack, onCompare }) {
   const [tab, setTab] = useState('overview');
   const [restoreMsg, setRestoreMsg] = useState('');
 
-  useEffect(() => {
-    let mounted = true;
-    fetchDataset(datasetId).then(data => {
-      if (mounted) {
-        if (data) {
-          setDs({
-            ...data,
-            name: data.name || 'Untitled Dataset',
-            desc: data.description || data.desc || 'No description available',
-            type: data.type || 'Tabular',
-            currentVersion: data.current_version || data.currentVersion || 'V1',
-            rows: data.rows_count ?? data.rows ?? 0,
-            columns: data.columns_count ?? data.columns ?? 0,
-            size: data.size_str || data.size || '0 MB',
-            owner: data.owner || 'You',
-            updated: data.updated || (data.created_at ? new Date(data.created_at).toLocaleDateString() : 'Recently'),
-            qualityScore: data.quality_score ?? data.qualityScore ?? 100,
-            versions: data.versions || [],
-            quality: data.quality || data.quality_breakdown || [],
-            pcaDrift: data.pcaDrift || data.pca_drift || [],
-            columnSchema: data.columnSchema || data.column_schema || [],
-          });
-        }
-        setLoading(false);
+  // Modal State for New Version
+  const [showModal, setShowModal] = useState(false);
+  const [versionLabel, setVersionLabel] = useState('');
+  const [versionNote, setVersionNote] = useState('');
+  const [versionFile, setVersionFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const loadData = async () => {
+    try {
+      const data = await fetchDataset(datasetId);
+      if (data) {
+        setDs({
+          ...data,
+          name: data.name || 'Untitled Dataset',
+          desc: data.description || data.desc || 'No description available',
+          type: data.type || 'Tabular',
+          currentVersion: data.current_version || data.currentVersion || 'V1',
+          rows: data.rows_count ?? data.rows ?? 0,
+          columns: data.columns_count ?? data.columns ?? 0,
+          size: data.size_str || data.size || '0 MB',
+          owner: data.owner || 'You',
+          updated: data.updated || (data.created_at ? new Date(data.created_at).toLocaleDateString() : 'Recently'),
+          qualityScore: data.quality_score ?? data.qualityScore ?? 100,
+          versions: data.versions || [],
+          quality: data.quality || data.quality_breakdown || [],
+          pcaDrift: data.pcaDrift || data.pca_drift || [],
+          columnSchema: data.columnSchema || data.column_schema || [],
+        });
       }
-    });
-    return () => { mounted = false; };
+    } catch (err) {
+      console.error('Failed to load dataset:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, [datasetId]);
+
+  function openUploadModal() {
+    const nextVer = `V${(ds?.versions?.length || 1) + 1}`;
+    setVersionLabel(nextVer);
+    setVersionNote('');
+    setVersionFile(null);
+    setUploadError('');
+    setShowModal(true);
+  }
+
+  async function handleUploadVersion(e) {
+    e.preventDefault();
+    if (!versionFile) {
+      setUploadError('Please choose a file to upload as the new version.');
+      return;
+    }
+    if (!versionLabel.trim()) {
+      setUploadError('Please provide a version label (e.g. V2).');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', versionFile);
+      formData.append('version_label', versionLabel.trim());
+      formData.append('version_note', versionNote.trim());
+
+      await uploadNewVersion(datasetId, formData);
+      setShowModal(false);
+      await loadData();
+      setRestoreMsg(`Version ${versionLabel.trim()} uploaded successfully!`);
+      setTimeout(() => setRestoreMsg(''), 4000);
+    } catch (err) {
+      console.error('New version upload error:', err);
+      setUploadError(err.message || 'Failed to upload new version.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   function handleRestore(version) {
     setRestoreMsg(`Version ${version} restored as active.`);
     setTimeout(() => setRestoreMsg(''), 3000);
+  }
+
+  async function handleDownload(ver) {
+    try {
+      const v = ver || ds?.currentVersion;
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || '';
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const res = await fetch(`${apiBase}/api/datasets/${datasetId}/download?version=${v}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('File download failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(ds?.name || 'dataset').replace(/\s+/g, '_')}_${v}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setRestoreMsg('Unable to download dataset file.');
+      setTimeout(() => setRestoreMsg(''), 3000);
+    }
   }
 
   if (loading) {
@@ -205,11 +287,11 @@ export default function DatasetDetail({ datasetId, onBack, onCompare }) {
               Compare Versions
             </button>
           )}
-          <button className="datasetdetail-btn-outline">
+          <button onClick={() => handleDownload()} className="datasetdetail-btn-outline">
             <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Download
           </button>
-          <button className="datasetdetail-btn-primary">
+          <button onClick={openUploadModal} className="datasetdetail-btn-primary">
             <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
             New Version
           </button>
@@ -325,12 +407,22 @@ export default function DatasetDetail({ datasetId, onBack, onCompare }) {
       )}
 
       {tab === 'versions' && (
-        <div className="datasetdetail-versions-table">
-          <div className="datasetdetail-versions-header">
-            {['Version', 'Rows', 'Columns', 'Size', 'Quality', 'Date · Author', 'Actions'].map((h, idx) => (
-              <p key={idx} style={{ fontSize: '11px', fontWeight: 600, color: '#6B7C93', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{h}</p>
-            ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0, fontSize: '13px', color: '#6B7C93' }}>
+              Showing {ds.versions.length} {ds.versions.length === 1 ? 'version' : 'versions'} for this dataset
+            </p>
+            <button onClick={openUploadModal} className="datasetdetail-btn-primary" style={{ padding: '6px 14px', fontSize: '12px' }}>
+              <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+              Upload New Version
+            </button>
           </div>
+          <div className="datasetdetail-versions-table">
+            <div className="datasetdetail-versions-header">
+              {['Version', 'Rows', 'Columns', 'Size', 'Quality', 'Date · Author', 'Actions'].map((h, idx) => (
+                <p key={idx} style={{ fontSize: '11px', fontWeight: 600, color: '#6B7C93', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{h}</p>
+              ))}
+            </div>
           <div>
             {[...ds.versions].reverse().map(v => (
               <div key={v.id} className="datasetdetail-versions-row">
@@ -355,7 +447,7 @@ export default function DatasetDetail({ datasetId, onBack, onCompare }) {
                   <p style={{ fontSize: '11px', color: '#A0AEBF', margin: 0 }}>{v.author}</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <button className="datasetdetail-btn-outline" style={{ padding: '4px 10px', fontSize: '11.5px' }}>
+                  <button onClick={() => handleDownload(v.version)} className="datasetdetail-btn-outline" style={{ padding: '4px 10px', fontSize: '11.5px' }}>
                     <svg width="12" height="12" fill="none" viewBox="0 0 12 12" style={{ display: 'inline', marginRight: '4px' }}><path d="M6 1v7M3 5l3 3 3-3M2 10h8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
                     Download
                   </button>
@@ -369,6 +461,7 @@ export default function DatasetDetail({ datasetId, onBack, onCompare }) {
             ))}
           </div>
         </div>
+      </div>
       )}
 
       {tab === 'quality' && (
@@ -445,6 +538,150 @@ export default function DatasetDetail({ datasetId, onBack, onCompare }) {
                 <span style={{ fontSize: '12.5px', fontFamily: 'DM Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#0B1220' }}>{col.unique.toLocaleString()}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* New Version Modal */}
+      {showModal && (
+        <div className="datasetdetail-modal-overlay" onClick={() => !uploading && setShowModal(false)}>
+          <div className="datasetdetail-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="datasetdetail-modal-header">
+              <div>
+                <h3 className="datasetdetail-modal-title">Upload New Version</h3>
+                <p className="datasetdetail-modal-subtitle">Add a new version for {ds.name}</p>
+              </div>
+              <button 
+                className="datasetdetail-modal-close-btn" 
+                onClick={() => !uploading && setShowModal(false)}
+                disabled={uploading}
+              >
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleUploadVersion}>
+              <div className="datasetdetail-modal-body">
+                {uploadError && (
+                  <div className="datasetdetail-modal-error">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span>{uploadError}</span>
+                  </div>
+                )}
+
+                {/* File Upload Dropzone */}
+                <div className="datasetdetail-modal-field">
+                  <label className="datasetdetail-modal-label">Dataset File *</label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                      if (e.target.files?.[0]) setVersionFile(e.target.files[0]);
+                    }}
+                  />
+                  {versionFile ? (
+                    <div className="datasetdetail-modal-file-selected">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span style={{ fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{versionFile.name}</span>
+                        <span style={{ fontSize: '11px', opacity: 0.8 }}>({(versionFile.size / 1024).toFixed(0)} KB)</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="datasetdetail-modal-remove-file"
+                        onClick={() => setVersionFile(null)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div 
+                      className={`datasetdetail-modal-dropzone ${dragOver ? 'dragover' : ''}`}
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                      onDragLeave={() => setDragOver(false)}
+                      onDrop={e => {
+                        e.preventDefault();
+                        setDragOver(false);
+                        if (e.dataTransfer.files?.[0]) setVersionFile(e.dataTransfer.files[0]);
+                      }}
+                    >
+                      <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#0F9D8A" strokeWidth="1.8" style={{ margin: '0 auto 8px', display: 'block' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p style={{ fontSize: '13px', fontWeight: 500, color: '#0B1220', margin: '0 0 4px 0' }}>
+                        Click to browse or drag file here
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#6B7C93', margin: 0 }}>
+                        Supports CSV, TSV, JSON, Parquet, and Excel
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Version Label */}
+                <div className="datasetdetail-modal-field">
+                  <label className="datasetdetail-modal-label">Version Label *</label>
+                  <input
+                    type="text"
+                    className="datasetdetail-modal-input"
+                    placeholder="e.g. V2"
+                    value={versionLabel}
+                    onChange={e => setVersionLabel(e.target.value)}
+                    required
+                  />
+                </div>
+
+                {/* Version Note */}
+                <div className="datasetdetail-modal-field">
+                  <label className="datasetdetail-modal-label">Version Note</label>
+                  <textarea
+                    rows="3"
+                    className="datasetdetail-modal-textarea"
+                    placeholder="Describe what changed in this version (e.g. Post-treatment cohort with shifted age distribution...)"
+                    value={versionNote}
+                    onChange={e => setVersionNote(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="datasetdetail-modal-footer">
+                <button
+                  type="button"
+                  className="datasetdetail-modal-cancel-btn"
+                  onClick={() => setShowModal(false)}
+                  disabled={uploading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="datasetdetail-modal-submit-btn"
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <>
+                      <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="white" strokeWidth="2" strokeDasharray="20" strokeLinecap="round"/></svg>
+                      Uploading Version...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                      Submit Version
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

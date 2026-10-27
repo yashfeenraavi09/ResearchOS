@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
+from fastapi.responses import FileResponse
 from typing import Optional, List, Dict, Any
 import json
 from core.auth import get_current_user
@@ -207,21 +208,52 @@ async def create_new_version(
         "storage_path": rel_storage_path,
     }
     created_ver = await db_post("dataset_versions", token, version_payload)
+    if not created_ver:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to record dataset version in Supabase. Please verify the dataset_versions table exists.",
+        )
+
+    # Calculate PCA drift against prior version if available
+    pca_components = []
+    try:
+        prior_versions = await db_get("dataset_versions", token, {
+            "dataset_id": f"eq.{dataset_id}",
+            "order": "created_at.desc",
+        })
+        older_versions = [v for v in (prior_versions or []) if v.get("id") != created_ver.get("id") and v.get("version") != version_label]
+        if older_versions:
+            prev_ver = older_versions[0]
+            if prev_ver.get("storage_path"):
+                from dataset_versioning.storage import get_dataset_file_path
+                prev_path = get_dataset_file_path(prev_ver["storage_path"], user_token=token)
+                if prev_path:
+                    from dataset_versioning.drift_engine import calculate_pca_drift
+                    ref_df = load_dataframe(prev_path)
+                    drift_result = calculate_pca_drift(ref_df, df)
+                    if drift_result.get("status") == "success":
+                        pca_components = drift_result.get("components", [])
+    except Exception as e:
+        print(f"[PCA Drift Calculation Error] {e}")
 
     # Update dataset current stats
+    patch_payload = {
+        "current_version": version_label,
+        "rows_count": profile["rows_count"],
+        "columns_count": profile["columns_count"],
+        "size_str": profile["size_str"],
+        "quality_score": profile["quality_score"],
+        "column_schema": profile["column_schema"],
+        "quality_breakdown": profile["quality_breakdown"],
+    }
+    if pca_components:
+        patch_payload["pca_drift"] = pca_components
+
     await db_patch(
         "datasets",
         token,
         {"id": f"eq.{dataset_id}"},
-        {
-            "current_version": version_label,
-            "rows_count": profile["rows_count"],
-            "columns_count": profile["columns_count"],
-            "size_str": profile["size_str"],
-            "quality_score": profile["quality_score"],
-            "column_schema": profile["column_schema"],
-            "quality_breakdown": profile["quality_breakdown"],
-        },
+        patch_payload,
     )
 
     await log_activity(
@@ -285,3 +317,31 @@ async def compare_versions(
     comparison["dataset_name"] = ds["name"]
 
     return comparison
+
+@router.get("/{dataset_id}/download")
+async def download_dataset_endpoint(
+    dataset_id: str,
+    version: Optional[str] = Query(None),
+    user: dict = Depends(get_current_user),
+):
+    token = user["_token"]
+    user_id = user["id"]
+    ds = await db_get_one("datasets", token, {"id": f"eq.{dataset_id}", "user_id": f"eq.{user_id}"})
+    if not ds:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+
+    params = {"dataset_id": f"eq.{dataset_id}", "order": "created_at.desc"}
+    if version:
+        params["version"] = f"eq.{version}"
+    ver = await db_get_one("dataset_versions", token, params)
+    if not ver or not ver.get("storage_path"):
+        raise HTTPException(status_code=404, detail="Version file not found")
+
+    file_path = get_dataset_file_path(ver["storage_path"], user_token=token)
+    if not file_path or not file_path.exists():
+        raise HTTPException(status_code=404, detail="File could not be retrieved from storage")
+
+    clean_name = ds["name"].replace(" ", "_")
+    ver_tag = ver.get("version", "V1")
+    filename = f"{clean_name}_{ver_tag}{file_path.suffix}"
+    return FileResponse(path=file_path, filename=filename, media_type="application/octet-stream")
