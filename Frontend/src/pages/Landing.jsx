@@ -64,6 +64,15 @@ function ArrowRightIcon({ size = 16, color = 'currentColor' }) {
     );
 }
 
+function ArrowUpIcon({ size = 18, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5" />
+            <polyline points="5 12 12 5 19 12" />
+        </svg>
+    );
+}
+
 function ChevronDownIcon({ size = 16, color = 'currentColor' }) {
     return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -886,7 +895,7 @@ function WorkflowTimeline() {
                     <span className="workflow-step-tag">STEP {workflowSteps[active].num}</span>
                     <h3 className="workflow-panel-title">{workflowSteps[active].title}</h3>
                     <p className="workflow-panel-desc">{workflowSteps[active].desc}</p>
-                    
+
                     <div className="workflow-interactive-indicator">
                         <span className="indicator-label">Step Status:</span>
                         <span className="indicator-badge">Ready for Execution</span>
@@ -935,6 +944,7 @@ function WorkflowTimeline() {
 ───────────────────────────────────────────────────────────────────────────── */
 export default function Landing({ onGetStarted, onLogin }) {
     const [scrolled, setScrolled] = useState(false);
+    const [showScrollTop, setShowScrollTop] = useState(false);
     const [openFaq, setOpenFaq] = useState(0);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0, active: false, px: 0, py: 0 });
     const heroRef = useRef(null);
@@ -955,15 +965,35 @@ export default function Landing({ onGetStarted, onLogin }) {
 
     useEffect(() => {
         const el = document.getElementById('landing-root');
-        if (!el) return;
-        const handler = () => setScrolled(el.scrollTop > 30);
-        el.addEventListener('scroll', handler);
-        return () => el.removeEventListener('scroll', handler);
+        const handleScroll = () => {
+            const top = el ? el.scrollTop : window.scrollY;
+            setScrolled(top > 30);
+            setShowScrollTop(top > 320);
+        };
+
+        if (el) el.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        // Initial check
+        handleScroll();
+
+        return () => {
+            if (el) el.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, []);
 
     const scrollTo = (id) => {
         const el = document.getElementById(id);
         if (el) el.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const scrollToTop = () => {
+        const el = document.getElementById('landing-root');
+        if (el) {
+            el.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
@@ -983,7 +1013,7 @@ export default function Landing({ onGetStarted, onLogin }) {
                 <div className="nav-container">
                     <div className="nav-brand" onClick={() => scrollTo('hero')}>
                         <ResearchOSLogo size={32} showWordmark={true} textColor="#0F172A" />
-                       
+
                     </div>
                     <div className="nav-links">
                         {navLinks.map((l) => (
@@ -1261,6 +1291,21 @@ export default function Landing({ onGetStarted, onLogin }) {
                     </div>
                 </div>
             </footer>
+
+            {/* ── BACK TO TOP FLOATING BUTTON ─────────────────────────────── */}
+            <button
+                type="button"
+                className={`landing-scroll-top-btn ${showScrollTop ? 'visible' : ''}`}
+                onClick={scrollToTop}
+                aria-label="Scroll to top of homepage"
+                title="Back to top"
+            >
+                <div className="scroll-top-glow" />
+                <div className="scroll-top-inner">
+                    <ArrowUpIcon size={18} color="#FFFFFF" />
+                </div>
+                <span className="scroll-top-tooltip">Back to top</span>
+            </button>
         </div>
     );
 }
